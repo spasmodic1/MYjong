@@ -1,7 +1,7 @@
 const {spawnSync}=require('node:child_process');
 const fs=require('node:fs/promises');
 async function main(){
-  const credential=spawnSync('git',['credential','fill'],{input:'protocol=https\nhost=github.com\n\n',encoding:'utf8',env:{...process.env,GIT_TERMINAL_PROMPT:'0'},windowsHide:true});
+  const credential=spawnSync('git',['credential','fill'],{input:'protocol=https\nhost=github.com\nusername=spasmodic1\n\n',encoding:'utf8',env:{...process.env,GIT_TERMINAL_PROMPT:'0'},windowsHide:true});
   if(credential.status!==0)throw Error('No GitHub CLI credential is available. Connect GitHub or provide the repository URL.');
   const values=Object.fromEntries(credential.stdout.trim().split('\n').map(line=>{const i=line.indexOf('=');return[line.slice(0,i),line.slice(i+1)];}));
   if(!values.password)throw Error('No stored GitHub credential is available.');
