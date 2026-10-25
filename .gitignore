@@ -1,0 +1,11 @@
+# Personal photo assets and their local catalog are not public source files.
+Photos/
+photo-catalog.json
+node_modules/
+dist/
+test-results/
+playwright-report/
+*.log
+.npm-cache/
+Screenshots/
+Private-Gift/

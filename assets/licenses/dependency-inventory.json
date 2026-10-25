@@ -1,0 +1,797 @@
+[
+  {
+    "name": "@emnapi/runtime",
+    "version": "1.11.3",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/@emnapi/runtime/-/runtime-1.11.3.tgz",
+    "licenseFiles": []
+  },
+  {
+    "name": "@img/colour",
+    "version": "1.1.0",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/@img/colour/-/colour-1.1.0.tgz",
+    "licenseFiles": [
+      "@img_colour-LICENSE.md"
+    ]
+  },
+  {
+    "name": "@img/sharp-darwin-arm64",
+    "version": "0.35.5",
+    "license": "Apache-2.0",
+    "source": "https://registry.npmjs.org/@img/sharp-darwin-arm64/-/sharp-darwin-arm64-0.35.5.tgz",
+    "licenseFiles": []
+  },
+  {
+    "name": "@img/sharp-darwin-x64",
+    "version": "0.35.5",
+    "license": "Apache-2.0",
+    "source": "https://registry.npmjs.org/@img/sharp-darwin-x64/-/sharp-darwin-x64-0.35.5.tgz",
+    "licenseFiles": []
+  },
+  {
+    "name": "@img/sharp-freebsd-wasm32",
+    "version": "0.35.5",
+    "license": "Apache-2.0",
+    "source": "https://registry.npmjs.org/@img/sharp-freebsd-wasm32/-/sharp-freebsd-wasm32-0.35.5.tgz",
+    "licenseFiles": []
+  },
+  {
+    "name": "@img/sharp-libvips-darwin-arm64",
+    "version": "1.3.4",
+    "license": "LGPL-3.0-or-later",
+    "source": "https://registry.npmjs.org/@img/sharp-libvips-darwin-arm64/-/sharp-libvips-darwin-arm64-1.3.4.tgz",
+    "licenseFiles": []
+  },
+  {
+    "name": "@img/sharp-libvips-darwin-x64",
+    "version": "1.3.4",
+    "license": "LGPL-3.0-or-later",
+    "source": "https://registry.npmjs.org/@img/sharp-libvips-darwin-x64/-/sharp-libvips-darwin-x64-1.3.4.tgz",
+    "licenseFiles": []
+  },
+  {
+    "name": "@img/sharp-libvips-linux-arm",
+    "version": "1.3.4",
+    "license": "LGPL-3.0-or-later",
+    "source": "https://registry.npmjs.org/@img/sharp-libvips-linux-arm/-/sharp-libvips-linux-arm-1.3.4.tgz",
+    "licenseFiles": []
+  },
+  {
+    "name": "@img/sharp-libvips-linux-arm64",
+    "version": "1.3.4",
+    "license": "LGPL-3.0-or-later",
+    "source": "https://registry.npmjs.org/@img/sharp-libvips-linux-arm64/-/sharp-libvips-linux-arm64-1.3.4.tgz",
+    "licenseFiles": []
+  },
+  {
+    "name": "@img/sharp-libvips-linux-ppc64",
+    "version": "1.3.4",
+    "license": "LGPL-3.0-or-later",
+    "source": "https://registry.npmjs.org/@img/sharp-libvips-linux-ppc64/-/sharp-libvips-linux-ppc64-1.3.4.tgz",
+    "licenseFiles": []
+  },
+  {
+    "name": "@img/sharp-libvips-linux-riscv64",
+    "version": "1.3.4",
+    "license": "LGPL-3.0-or-later",
+    "source": "https://registry.npmjs.org/@img/sharp-libvips-linux-riscv64/-/sharp-libvips-linux-riscv64-1.3.4.tgz",
+    "licenseFiles": []
+  },
+  {
+    "name": "@img/sharp-libvips-linux-s390x",
+    "version": "1.3.4",
+    "license": "LGPL-3.0-or-later",
+    "source": "https://registry.npmjs.org/@img/sharp-libvips-linux-s390x/-/sharp-libvips-linux-s390x-1.3.4.tgz",
+    "licenseFiles": []
+  },
+  {
+    "name": "@img/sharp-libvips-linux-x64",
+    "version": "1.3.4",
+    "license": "LGPL-3.0-or-later",
+    "source": "https://registry.npmjs.org/@img/sharp-libvips-linux-x64/-/sharp-libvips-linux-x64-1.3.4.tgz",
+    "licenseFiles": []
+  },
+  {
+    "name": "@img/sharp-libvips-linuxmusl-arm64",
+    "version": "1.3.4",
+    "license": "LGPL-3.0-or-later",
+    "source": "https://registry.npmjs.org/@img/sharp-libvips-linuxmusl-arm64/-/sharp-libvips-linuxmusl-arm64-1.3.4.tgz",
+    "licenseFiles": []
+  },
+  {
+    "name": "@img/sharp-libvips-linuxmusl-x64",
+    "version": "1.3.4",
+    "license": "LGPL-3.0-or-later",
+    "source": "https://registry.npmjs.org/@img/sharp-libvips-linuxmusl-x64/-/sharp-libvips-linuxmusl-x64-1.3.4.tgz",
+    "licenseFiles": []
+  },
+  {
+    "name": "@img/sharp-linux-arm",
+    "version": "0.35.5",
+    "license": "Apache-2.0",
+    "source": "https://registry.npmjs.org/@img/sharp-linux-arm/-/sharp-linux-arm-0.35.5.tgz",
+    "licenseFiles": []
+  },
+  {
+    "name": "@img/sharp-linux-arm64",
+    "version": "0.35.5",
+    "license": "Apache-2.0",
+    "source": "https://registry.npmjs.org/@img/sharp-linux-arm64/-/sharp-linux-arm64-0.35.5.tgz",
+    "licenseFiles": []
+  },
+  {
+    "name": "@img/sharp-linux-ppc64",
+    "version": "0.35.5",
+    "license": "Apache-2.0",
+    "source": "https://registry.npmjs.org/@img/sharp-linux-ppc64/-/sharp-linux-ppc64-0.35.5.tgz",
+    "licenseFiles": []
+  },
+  {
+    "name": "@img/sharp-linux-riscv64",
+    "version": "0.35.5",
+    "license": "Apache-2.0",
+    "source": "https://registry.npmjs.org/@img/sharp-linux-riscv64/-/sharp-linux-riscv64-0.35.5.tgz",
+    "licenseFiles": []
+  },
+  {
+    "name": "@img/sharp-linux-s390x",
+    "version": "0.35.5",
+    "license": "Apache-2.0",
+    "source": "https://registry.npmjs.org/@img/sharp-linux-s390x/-/sharp-linux-s390x-0.35.5.tgz",
+    "licenseFiles": []
+  },
+  {
+    "name": "@img/sharp-linux-x64",
+    "version": "0.35.5",
+    "license": "Apache-2.0",
+    "source": "https://registry.npmjs.org/@img/sharp-linux-x64/-/sharp-linux-x64-0.35.5.tgz",
+    "licenseFiles": []
+  },
+  {
+    "name": "@img/sharp-linuxmusl-arm64",
+    "version": "0.35.5",
+    "license": "Apache-2.0",
+    "source": "https://registry.npmjs.org/@img/sharp-linuxmusl-arm64/-/sharp-linuxmusl-arm64-0.35.5.tgz",
+    "licenseFiles": []
+  },
+  {
+    "name": "@img/sharp-linuxmusl-x64",
+    "version": "0.35.5",
+    "license": "Apache-2.0",
+    "source": "https://registry.npmjs.org/@img/sharp-linuxmusl-x64/-/sharp-linuxmusl-x64-0.35.5.tgz",
+    "licenseFiles": []
+  },
+  {
+    "name": "@img/sharp-wasm32",
+    "version": "0.35.5",
+    "license": "Apache-2.0 AND LGPL-3.0-or-later AND MIT",
+    "source": "https://registry.npmjs.org/@img/sharp-wasm32/-/sharp-wasm32-0.35.5.tgz",
+    "licenseFiles": []
+  },
+  {
+    "name": "@img/sharp-webcontainers-wasm32",
+    "version": "0.35.5",
+    "license": "Apache-2.0",
+    "source": "https://registry.npmjs.org/@img/sharp-webcontainers-wasm32/-/sharp-webcontainers-wasm32-0.35.5.tgz",
+    "licenseFiles": []
+  },
+  {
+    "name": "@img/sharp-win32-arm64",
+    "version": "0.35.5",
+    "license": "Apache-2.0 AND LGPL-3.0-or-later",
+    "source": "https://registry.npmjs.org/@img/sharp-win32-arm64/-/sharp-win32-arm64-0.35.5.tgz",
+    "licenseFiles": []
+  },
+  {
+    "name": "@img/sharp-win32-ia32",
+    "version": "0.35.5",
+    "license": "Apache-2.0 AND LGPL-3.0-or-later",
+    "source": "https://registry.npmjs.org/@img/sharp-win32-ia32/-/sharp-win32-ia32-0.35.5.tgz",
+    "licenseFiles": []
+  },
+  {
+    "name": "@img/sharp-win32-x64",
+    "version": "0.35.5",
+    "license": "Apache-2.0 AND LGPL-3.0-or-later",
+    "source": "https://registry.npmjs.org/@img/sharp-win32-x64/-/sharp-win32-x64-0.35.5.tgz",
+    "licenseFiles": [
+      "@img_sharp-win32-x64-LICENSE"
+    ]
+  },
+  {
+    "name": "ansi-regex",
+    "version": "5.0.1",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/ansi-regex/-/ansi-regex-5.0.1.tgz",
+    "licenseFiles": [
+      "ansi-regex-license"
+    ]
+  },
+  {
+    "name": "ansi-styles",
+    "version": "4.3.0",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/ansi-styles/-/ansi-styles-4.3.0.tgz",
+    "licenseFiles": [
+      "ansi-styles-license"
+    ]
+  },
+  {
+    "name": "argparse",
+    "version": "2.0.1",
+    "license": "Python-2.0",
+    "source": "https://registry.npmjs.org/argparse/-/argparse-2.0.1.tgz",
+    "licenseFiles": [
+      "argparse-LICENSE"
+    ]
+  },
+  {
+    "name": "builder-util-runtime",
+    "version": "9.7.0",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/builder-util-runtime/-/builder-util-runtime-9.7.0.tgz",
+    "licenseFiles": [
+      "builder-util-runtime-LICENSE"
+    ]
+  },
+  {
+    "name": "camelcase",
+    "version": "5.3.1",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/camelcase/-/camelcase-5.3.1.tgz",
+    "licenseFiles": [
+      "camelcase-license"
+    ]
+  },
+  {
+    "name": "cliui",
+    "version": "6.0.0",
+    "license": "ISC",
+    "source": "https://registry.npmjs.org/cliui/-/cliui-6.0.0.tgz",
+    "licenseFiles": [
+      "cliui-LICENSE.txt"
+    ]
+  },
+  {
+    "name": "color-convert",
+    "version": "2.0.1",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/color-convert/-/color-convert-2.0.1.tgz",
+    "licenseFiles": [
+      "color-convert-LICENSE"
+    ]
+  },
+  {
+    "name": "color-name",
+    "version": "1.1.4",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/color-name/-/color-name-1.1.4.tgz",
+    "licenseFiles": [
+      "color-name-LICENSE"
+    ]
+  },
+  {
+    "name": "core-util-is",
+    "version": "1.0.3",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/core-util-is/-/core-util-is-1.0.3.tgz",
+    "licenseFiles": [
+      "core-util-is-LICENSE"
+    ]
+  },
+  {
+    "name": "debug",
+    "version": "4.4.3",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/debug/-/debug-4.4.3.tgz",
+    "licenseFiles": [
+      "debug-LICENSE"
+    ]
+  },
+  {
+    "name": "decamelize",
+    "version": "1.2.0",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/decamelize/-/decamelize-1.2.0.tgz",
+    "licenseFiles": [
+      "decamelize-license"
+    ]
+  },
+  {
+    "name": "detect-libc",
+    "version": "2.1.2",
+    "license": "Apache-2.0",
+    "source": "https://registry.npmjs.org/detect-libc/-/detect-libc-2.1.2.tgz",
+    "licenseFiles": [
+      "detect-libc-LICENSE"
+    ]
+  },
+  {
+    "name": "dijkstrajs",
+    "version": "1.0.3",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/dijkstrajs/-/dijkstrajs-1.0.3.tgz",
+    "licenseFiles": [
+      "dijkstrajs-LICENSE.md"
+    ]
+  },
+  {
+    "name": "electron-updater",
+    "version": "6.8.11",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/electron-updater/-/electron-updater-6.8.11.tgz",
+    "licenseFiles": [
+      "electron-updater-LICENSE"
+    ]
+  },
+  {
+    "name": "emoji-regex",
+    "version": "8.0.0",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/emoji-regex/-/emoji-regex-8.0.0.tgz",
+    "licenseFiles": [
+      "emoji-regex-LICENSE-MIT.txt"
+    ]
+  },
+  {
+    "name": "find-up",
+    "version": "4.1.0",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/find-up/-/find-up-4.1.0.tgz",
+    "licenseFiles": [
+      "find-up-license"
+    ]
+  },
+  {
+    "name": "fs-extra",
+    "version": "10.1.0",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/fs-extra/-/fs-extra-10.1.0.tgz",
+    "licenseFiles": [
+      "fs-extra-LICENSE"
+    ]
+  },
+  {
+    "name": "get-caller-file",
+    "version": "2.0.5",
+    "license": "ISC",
+    "source": "https://registry.npmjs.org/get-caller-file/-/get-caller-file-2.0.5.tgz",
+    "licenseFiles": [
+      "get-caller-file-LICENSE.md"
+    ]
+  },
+  {
+    "name": "graceful-fs",
+    "version": "4.2.11",
+    "license": "ISC",
+    "source": "https://registry.npmjs.org/graceful-fs/-/graceful-fs-4.2.11.tgz",
+    "licenseFiles": [
+      "graceful-fs-LICENSE"
+    ]
+  },
+  {
+    "name": "heic-convert",
+    "version": "2.1.0",
+    "license": "ISC",
+    "source": "https://registry.npmjs.org/heic-convert/-/heic-convert-2.1.0.tgz",
+    "licenseFiles": []
+  },
+  {
+    "name": "heic-decode",
+    "version": "2.1.0",
+    "license": "ISC",
+    "source": "https://registry.npmjs.org/heic-decode/-/heic-decode-2.1.0.tgz",
+    "licenseFiles": []
+  },
+  {
+    "name": "immediate",
+    "version": "3.0.6",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/immediate/-/immediate-3.0.6.tgz",
+    "licenseFiles": [
+      "immediate-LICENSE.txt"
+    ]
+  },
+  {
+    "name": "inherits",
+    "version": "2.0.4",
+    "license": "ISC",
+    "source": "https://registry.npmjs.org/inherits/-/inherits-2.0.4.tgz",
+    "licenseFiles": [
+      "inherits-LICENSE"
+    ]
+  },
+  {
+    "name": "is-fullwidth-code-point",
+    "version": "3.0.0",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/is-fullwidth-code-point/-/is-fullwidth-code-point-3.0.0.tgz",
+    "licenseFiles": [
+      "is-fullwidth-code-point-license"
+    ]
+  },
+  {
+    "name": "isarray",
+    "version": "1.0.0",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/isarray/-/isarray-1.0.0.tgz",
+    "licenseFiles": []
+  },
+  {
+    "name": "jpeg-js",
+    "version": "0.4.4",
+    "license": "BSD-3-Clause",
+    "source": "https://registry.npmjs.org/jpeg-js/-/jpeg-js-0.4.4.tgz",
+    "licenseFiles": [
+      "jpeg-js-LICENSE"
+    ]
+  },
+  {
+    "name": "js-yaml",
+    "version": "4.3.2",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/js-yaml/-/js-yaml-4.3.2.tgz",
+    "licenseFiles": [
+      "js-yaml-LICENSE"
+    ]
+  },
+  {
+    "name": "jsonfile",
+    "version": "6.2.1",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/jsonfile/-/jsonfile-6.2.1.tgz",
+    "licenseFiles": [
+      "jsonfile-LICENSE"
+    ]
+  },
+  {
+    "name": "jszip",
+    "version": "3.10.2",
+    "license": "(MIT OR GPL-3.0-or-later)",
+    "source": "https://registry.npmjs.org/jszip/-/jszip-3.10.2.tgz",
+    "licenseFiles": [
+      "jszip-LICENSE.markdown"
+    ]
+  },
+  {
+    "name": "lazy-val",
+    "version": "1.0.5",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/lazy-val/-/lazy-val-1.0.5.tgz",
+    "licenseFiles": []
+  },
+  {
+    "name": "libheif-js",
+    "version": "1.23.5",
+    "license": "LGPL-3.0",
+    "source": "https://registry.npmjs.org/libheif-js/-/libheif-js-1.23.5.tgz",
+    "licenseFiles": [
+      "libheif-js-LICENSE"
+    ]
+  },
+  {
+    "name": "lie",
+    "version": "3.3.0",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/lie/-/lie-3.3.0.tgz",
+    "licenseFiles": [
+      "lie-license.md"
+    ]
+  },
+  {
+    "name": "locate-path",
+    "version": "5.0.0",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/locate-path/-/locate-path-5.0.0.tgz",
+    "licenseFiles": [
+      "locate-path-license"
+    ]
+  },
+  {
+    "name": "lodash.escaperegexp",
+    "version": "4.1.2",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/lodash.escaperegexp/-/lodash.escaperegexp-4.1.2.tgz",
+    "licenseFiles": [
+      "lodash.escaperegexp-LICENSE"
+    ]
+  },
+  {
+    "name": "lodash.isequal",
+    "version": "4.5.0",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/lodash.isequal/-/lodash.isequal-4.5.0.tgz",
+    "licenseFiles": [
+      "lodash.isequal-LICENSE"
+    ]
+  },
+  {
+    "name": "ms",
+    "version": "2.1.3",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/ms/-/ms-2.1.3.tgz",
+    "licenseFiles": [
+      "ms-license.md"
+    ]
+  },
+  {
+    "name": "p-limit",
+    "version": "2.3.0",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/p-limit/-/p-limit-2.3.0.tgz",
+    "licenseFiles": [
+      "p-limit-license"
+    ]
+  },
+  {
+    "name": "p-locate",
+    "version": "4.1.0",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/p-locate/-/p-locate-4.1.0.tgz",
+    "licenseFiles": [
+      "p-locate-license"
+    ]
+  },
+  {
+    "name": "p-try",
+    "version": "2.2.0",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/p-try/-/p-try-2.2.0.tgz",
+    "licenseFiles": [
+      "p-try-license"
+    ]
+  },
+  {
+    "name": "pako",
+    "version": "1.0.11",
+    "license": "(MIT AND Zlib)",
+    "source": "https://registry.npmjs.org/pako/-/pako-1.0.11.tgz",
+    "licenseFiles": [
+      "pako-LICENSE"
+    ]
+  },
+  {
+    "name": "path-exists",
+    "version": "4.0.0",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/path-exists/-/path-exists-4.0.0.tgz",
+    "licenseFiles": [
+      "path-exists-license"
+    ]
+  },
+  {
+    "name": "pngjs",
+    "version": "6.0.0",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/pngjs/-/pngjs-6.0.0.tgz",
+    "licenseFiles": [
+      "pngjs-LICENSE"
+    ]
+  },
+  {
+    "name": "process-nextick-args",
+    "version": "2.0.1",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/process-nextick-args/-/process-nextick-args-2.0.1.tgz",
+    "licenseFiles": [
+      "process-nextick-args-license.md"
+    ]
+  },
+  {
+    "name": "qrcode",
+    "version": "1.5.4",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/qrcode/-/qrcode-1.5.4.tgz",
+    "licenseFiles": [
+      "qrcode-license"
+    ]
+  },
+  {
+    "name": "pngjs",
+    "version": "5.0.0",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/pngjs/-/pngjs-5.0.0.tgz",
+    "licenseFiles": [
+      "pngjs-LICENSE"
+    ]
+  },
+  {
+    "name": "readable-stream",
+    "version": "2.3.8",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/readable-stream/-/readable-stream-2.3.8.tgz",
+    "licenseFiles": [
+      "readable-stream-LICENSE"
+    ]
+  },
+  {
+    "name": "require-directory",
+    "version": "2.1.1",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/require-directory/-/require-directory-2.1.1.tgz",
+    "licenseFiles": [
+      "require-directory-LICENSE"
+    ]
+  },
+  {
+    "name": "require-main-filename",
+    "version": "2.0.0",
+    "license": "ISC",
+    "source": "https://registry.npmjs.org/require-main-filename/-/require-main-filename-2.0.0.tgz",
+    "licenseFiles": [
+      "require-main-filename-LICENSE.txt"
+    ]
+  },
+  {
+    "name": "safe-buffer",
+    "version": "5.1.2",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/safe-buffer/-/safe-buffer-5.1.2.tgz",
+    "licenseFiles": [
+      "safe-buffer-LICENSE"
+    ]
+  },
+  {
+    "name": "sax",
+    "version": "1.6.1",
+    "license": "BlueOak-1.0.0",
+    "source": "https://registry.npmjs.org/sax/-/sax-1.6.1.tgz",
+    "licenseFiles": [
+      "sax-LICENSE.md"
+    ]
+  },
+  {
+    "name": "semver",
+    "version": "7.7.4",
+    "license": "ISC",
+    "source": "https://registry.npmjs.org/semver/-/semver-7.7.4.tgz",
+    "licenseFiles": [
+      "semver-LICENSE"
+    ]
+  },
+  {
+    "name": "set-blocking",
+    "version": "2.0.0",
+    "license": "ISC",
+    "source": "https://registry.npmjs.org/set-blocking/-/set-blocking-2.0.0.tgz",
+    "licenseFiles": [
+      "set-blocking-LICENSE.txt"
+    ]
+  },
+  {
+    "name": "setimmediate",
+    "version": "1.0.5",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/setimmediate/-/setimmediate-1.0.5.tgz",
+    "licenseFiles": [
+      "setimmediate-LICENSE.txt"
+    ]
+  },
+  {
+    "name": "sharp",
+    "version": "0.35.5",
+    "license": "Apache-2.0",
+    "source": "https://registry.npmjs.org/sharp/-/sharp-0.35.5.tgz",
+    "licenseFiles": [
+      "sharp-LICENSE"
+    ]
+  },
+  {
+    "name": "semver",
+    "version": "7.8.5",
+    "license": "ISC",
+    "source": "https://registry.npmjs.org/semver/-/semver-7.8.5.tgz",
+    "licenseFiles": [
+      "semver-LICENSE"
+    ]
+  },
+  {
+    "name": "string_decoder",
+    "version": "1.1.1",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/string_decoder/-/string_decoder-1.1.1.tgz",
+    "licenseFiles": [
+      "string_decoder-LICENSE"
+    ]
+  },
+  {
+    "name": "string-width",
+    "version": "4.2.3",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/string-width/-/string-width-4.2.3.tgz",
+    "licenseFiles": [
+      "string-width-license"
+    ]
+  },
+  {
+    "name": "strip-ansi",
+    "version": "6.0.1",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/strip-ansi/-/strip-ansi-6.0.1.tgz",
+    "licenseFiles": [
+      "strip-ansi-license"
+    ]
+  },
+  {
+    "name": "tiny-typed-emitter",
+    "version": "2.1.0",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/tiny-typed-emitter/-/tiny-typed-emitter-2.1.0.tgz",
+    "licenseFiles": [
+      "tiny-typed-emitter-LICENSE"
+    ]
+  },
+  {
+    "name": "tslib",
+    "version": "2.8.1",
+    "license": "0BSD",
+    "source": "https://registry.npmjs.org/tslib/-/tslib-2.8.1.tgz",
+    "licenseFiles": [
+      "tslib-LICENSE.txt"
+    ]
+  },
+  {
+    "name": "universalify",
+    "version": "2.0.1",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/universalify/-/universalify-2.0.1.tgz",
+    "licenseFiles": [
+      "universalify-LICENSE"
+    ]
+  },
+  {
+    "name": "util-deprecate",
+    "version": "1.0.2",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/util-deprecate/-/util-deprecate-1.0.2.tgz",
+    "licenseFiles": [
+      "util-deprecate-LICENSE"
+    ]
+  },
+  {
+    "name": "which-module",
+    "version": "2.0.1",
+    "license": "ISC",
+    "source": "https://registry.npmjs.org/which-module/-/which-module-2.0.1.tgz",
+    "licenseFiles": [
+      "which-module-LICENSE"
+    ]
+  },
+  {
+    "name": "wrap-ansi",
+    "version": "6.2.0",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/wrap-ansi/-/wrap-ansi-6.2.0.tgz",
+    "licenseFiles": [
+      "wrap-ansi-license"
+    ]
+  },
+  {
+    "name": "y18n",
+    "version": "4.0.3",
+    "license": "ISC",
+    "source": "https://registry.npmjs.org/y18n/-/y18n-4.0.3.tgz",
+    "licenseFiles": [
+      "y18n-LICENSE"
+    ]
+  },
+  {
+    "name": "yargs",
+    "version": "15.4.1",
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/yargs/-/yargs-15.4.1.tgz",
+    "licenseFiles": [
+      "yargs-LICENSE"
+    ]
+  },
+  {
+    "name": "yargs-parser",
+    "version": "18.1.3",
+    "license": "ISC",
+    "source": "https://registry.npmjs.org/yargs-parser/-/yargs-parser-18.1.3.tgz",
+    "licenseFiles": [
+      "yargs-parser-LICENSE.txt"
+    ]
+  }
+]

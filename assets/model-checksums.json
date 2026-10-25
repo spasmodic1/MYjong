@@ -1,0 +1,14 @@
+{
+  "face_landmark_68_tiny_model-weights_manifest.json": "9a1a5dd19fd814fd5095c3cb58f8e0d3193b8c5b9a6715b30a69d559aea31ad4",
+  "face_landmark_68_tiny_model.bin": "b98e9f2f7da76f8a6dda9741a36ed485b224b889d552de2b2c1bb16217f67bfc",
+  "face_recognition_model-weights_manifest.json": "cbaffa501b0b9275a12b63357a6843e7e30c054e1c9151e1a5f879b26e32986b",
+  "face_recognition_model.bin": "b413e420d6840b2775fba32008db6f3cddb07d485967fb42cfcf379c16a8c589",
+  "tiny_face_detector_model-weights_manifest.json": "5d1af4849ac48d5b985f4a9b16010c512353ddd6fcc63d50fd0bc9e9e64296e5",
+  "tiny_face_detector_model.bin": "b7503ce7df31039b1c43316a9b865cab6a70dd748cc602d3fa28b551503c3871",
+  "pets/group1-shard1of5": "0e7af0f713e98521252321f7f84892c31cefccccec3ac64c84e5065b75ed5646",
+  "pets/group1-shard2of5": "74cc6cfc2c4510c9cd81b8ad4cebf6f6a8f305119bb365ce0eb96276da38519a",
+  "pets/group1-shard3of5": "50383033f893eae136392a403e8f70ade5efd90867df5695c4ca5ac640e14f38",
+  "pets/group1-shard4of5": "d856dc534c780068bbf6c666ce1516df2c8433d87578aa31fcdf197de7058cc2",
+  "pets/group1-shard5of5": "3d356f1fb6dfca6af78c56db34d9326706d0196e303f9de6b04f236ca79ed309",
+  "pets/model.json": "3770b2528339b1e3340cb74360e1e40401816b009779aeb8d0cce3a4353ea3a9"
+}

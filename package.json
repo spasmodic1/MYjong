@@ -1,0 +1,70 @@
+{
+  "name": "myjong",
+  "version": "0.9.0",
+  "description": "A personal, offline mahjong solitaire game for Windows",
+  "author": "MYjong",
+  "main": "desktop/main.cjs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test src/*.test.js desktop/*.test.cjs",
+    "start": "electron .",
+    "build": "electron-builder --config release-builder.cjs --win nsis --x64 --publish never",
+    "build:portable": "electron-builder --win portable --x64 --publish never",
+    "release": "electron-builder --config release-builder.cjs --win nsis --x64 --publish onTag",
+    "test:desktop": "node --test e2e/desktop.test.cjs",
+    "test:models": "node --test e2e/recognition.test.cjs",
+    "prepare:models": "node tools/prepare-models.cjs && node tools/bundle-recognition.cjs"
+  },
+  "build": {
+    "appId": "com.myjong.desktop",
+    "productName": "MYjong",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "index.html",
+      "src/**/*.js",
+      "src/**/*.css",
+      "!src/**/*.test.js",
+      "!src/recognition-entry.js",
+      "desktop/**/*.cjs",
+      "!desktop/**/*.test.cjs",
+      "assets/**",
+      "release-config.json",
+      "THIRD-PARTY-NOTICES.md",
+      "package.json"
+    ],
+    "asar": true,
+    "asarUnpack": ["node_modules/libheif-js/**", "node_modules/@img/**"],
+    "win": {
+      "target": "nsis",
+      "signAndEditExecutable": true,
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false,
+      "createDesktopShortcut": true
+    },
+    "publish": null
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.11",
+    "heic-convert": "^2.1.0",
+    "jszip": "^3.10.2",
+    "qrcode": "^1.5.4",
+    "sharp": "^0.35.5"
+  },
+  "devDependencies": {
+    "@tensorflow-models/coco-ssd": "^2.2.3",
+    "@tensorflow/tfjs": "^4.22.0",
+    "@vladmandic/face-api": "^1.7.15",
+    "@playwright/test": "^1.64.1",
+    "electron": "^45.0.0",
+    "electron-builder": "^26.18.0",
+    "esbuild": "^0.28.2"
+  }
+}

@@ -1,0 +1,25 @@
+const {test}=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs/promises'),path=require('node:path'),os=require('node:os');
+const {_electron:electron}=require('@playwright/test');
+const root=path.resolve(__dirname,'..');
+test('packaged Windows app seeds approved collection, saves on close and retains user changes',{timeout:90000},async t=>{
+  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'myjong-package-'));let application;
+  t.after(async()=>{await application?.close();await fs.rm(dir,{recursive:true,force:true});});
+  const launch=async()=>{application=await electron.launch({executablePath:path.join(root,'dist/win-unpacked/MYjong.exe'),args:[],env:{...process.env,MYJONG_TEST_DATA:dir,MYJONG_SMOKE:'1'}});const page=await application.firstWindow();page.setDefaultTimeout(15000);await page.waitForSelector('.tile');return page;};
+  let page=await launch();
+  let loaded=await page.evaluate(()=>window.myjong.load());assert.equal(loaded.library.photos.length,21);assert.equal(loaded.library.subjects.length,5);
+  assert.ok(await page.locator('.tile-photo').count()>0);
+  await page.waitForFunction(()=>[...document.querySelectorAll('.tile-photo')].every(i=>i.naturalWidth>0));
+  await page.locator('#hint').click();const ids=await page.locator('.tile.hint').evaluateAll(tiles=>tiles.map(t=>t.dataset.id));const count=await page.locator('.tile').count();
+  for(const id of ids)await page.locator(`.tile[data-id="${id}"]`).click();
+  // Close the actual window immediately to exercise the final save handshake.
+  const closed=application.waitForEvent('close');await application.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].close());
+  await closed;application=null;
+  page=await launch();assert.equal(await page.locator('.tile').count(),count-2);
+  loaded=await page.evaluate(()=>window.myjong.load());const subject=loaded.library.subjects[0];
+  await page.evaluate(s=>window.myjong.changePhoto({type:'subject',id:s.id,name:'Renamed starter',included:false,kind:'pet'}),subject);
+  await application.close();application=null;
+  page=await launch();loaded=await page.evaluate(()=>window.myjong.load());assert.equal(loaded.library.subjects[0].name,'Renamed starter');assert.equal(loaded.library.subjects[0].included,false);
+  await fs.mkdir(path.join(root,'test-results'),{recursive:true});await page.screenshot({path:path.join(root,'test-results/packaged-starter.png')});
+});
