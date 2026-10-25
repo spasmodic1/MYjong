@@ -15,7 +15,7 @@ test('photo matching modes preserve identities and respect exclusions', () => {
   }
   const traditional = makeGame({...defaults,collection:'traditional'},library);
   assert.ok(traditional.tiles.every(t => t.face >= 10));
-  const mixed=makeGame({...defaults,difficulty:1},library);
+  const mixed=makeGame({...defaults,difficulty:1,layout:'Terrace'},library);
   assert.equal(mixed.tiles.filter(t=>t.face<10).length,mixed.tiles.length/2);
 });
 test('shuffle preserves remaining face counts and yields a removable arrangement', () => {

@@ -11,6 +11,19 @@ async function main(){
     return response.status===204?null:response.json();
   };
   const profile=await request('/user');
+  if(process.argv[2]==='status'){
+    const runs=await request(`/repos/${profile.login}/MYjong/actions/runs?per_page=3`);
+    console.log(JSON.stringify(runs.workflow_runs.map(r=>({id:r.id,event:r.event,status:r.status,conclusion:r.conclusion,url:r.html_url,sha:r.head_sha})),null,2));return;
+  }
+  if(process.argv[2]==='jobs'){
+    const jobs=await request(`/repos/${profile.login}/MYjong/actions/runs/${process.argv[3]}/jobs`);
+    console.log(JSON.stringify(jobs.jobs.map(j=>({id:j.id,status:j.status,conclusion:j.conclusion,steps:j.steps.map(s=>({name:s.name,conclusion:s.conclusion}))})),null,2));return;
+  }
+  if(process.argv[2]==='logs'){
+    const response=await fetch(`https://api.github.com/repos/${profile.login}/MYjong/actions/jobs/${process.argv[3]}/logs`,{headers:{Authorization:'Bearer '+values.password,'User-Agent':'MYjong-development'},signal:AbortSignal.timeout(20000)});
+    if(!response.ok)throw Error('Could not fetch job logs: '+response.status);
+    await fs.mkdir('test-results',{recursive:true});await fs.writeFile('test-results/ci-log.txt',await response.text());console.log('Saved GitHub job log to test-results/ci-log.txt');return;
+  }
   if(process.argv[2]==='create'){
     let repo;
     try{repo=await request(`/repos/${profile.login}/MYjong`);}catch(e){if(!e.message.includes('(404)'))throw e;}

@@ -390,6 +390,7 @@ function bind() {
     });
   }
   $('update').onclick = () => run(async () => { $('update').disabled = true; $('settings-message').textContent = 'Checking for updates…'; try { $('settings-message').textContent = await api.update(); } finally { $('update').disabled = false; } });
+  api.onUpdate?.(text=>{$('settings-message').textContent=text;});
   $('subject-filter').onchange = renderLibrary; $('add-subject').onclick = () => editSubject();
   $('subject-form').onsubmit = event => { event.preventDefault(); run(async () => { await change({ type: 'subject', id: activeSubject, name: $('subject-name').value, kind: $('subject-kind').value, included: $('subject-included').checked }); close('subject-dialog'); }); };
   $('merge-subject').onclick = () => run(async () => {

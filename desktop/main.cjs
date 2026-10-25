@@ -6,7 +6,7 @@ const { Library, accepted } = require('./library.cjs');
 const { startPhone } = require('./phone.cjs');
 const root = path.resolve(__dirname, '..');
 protocol.registerSchemesAsPrivileged([{ scheme: 'myjong', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } }]);
-let window, library, phone, closeReady = false;
+let window, library, phone, closeReady = false, updateConfigured=false;
 const testingRoot = process.env.MYJONG_TEST_DATA;
 if (testingRoot) app.setPath('userData', path.resolve(testingRoot));
 app.setName('MYjong');
@@ -117,6 +117,11 @@ app.whenReady().then(async () => {
     try { config = JSON.parse(await fs.readFile(path.join(root, 'release-config.json'), 'utf8')); } catch { /* An offline build has no feed. */ }
     if (!app.isPackaged || !config?.owner || !config?.repo) return 'This build has no release channel yet. Your photos and saves are safe to keep using.';
     const { autoUpdater } = require('electron-updater');
+    if(!updateConfigured){
+      autoUpdater.on('download-progress',progress=>window.webContents.send('update-status',`Downloading MYjong… ${Math.round(progress.percent)}%`));
+      autoUpdater.on('update-downloaded',()=>window.webContents.send('update-status','Update downloaded. Ready when you are.'));
+      updateConfigured=true;
+    }
     autoUpdater.setFeedURL({ provider: 'github', owner: config.owner, repo: config.repo });
     autoUpdater.autoDownload = false;
     autoUpdater.autoInstallOnAppQuit = false;
