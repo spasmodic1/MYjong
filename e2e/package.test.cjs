@@ -11,6 +11,11 @@ test('packaged Windows app seeds approved collection, saves on close and retains
   let loaded=await page.evaluate(()=>window.myjong.load());assert.equal(loaded.library.photos.length,21);assert.equal(loaded.library.subjects.length,5);
   assert.ok(await page.locator('.tile-photo').count()>0);
   await page.waitForFunction(()=>[...document.querySelectorAll('.tile-photo')].every(i=>i.naturalWidth>0));
+  const fitted=(await page.locator('.tile').first().boundingBox()).width;
+  await page.getByRole('button',{name:'Larger tiles',exact:true}).click();
+  assert.ok((await page.locator('.tile').first().boundingBox()).width>fitted);
+  await page.getByRole('button',{name:'Fit board',exact:true}).click();
+  assert.ok(Math.abs((await page.locator('.tile').first().boundingBox()).width-fitted)<1);
   await page.locator('#hint').click();const ids=await page.locator('.tile.hint').evaluateAll(tiles=>tiles.map(t=>t.dataset.id));const count=await page.locator('.tile').count();
   for(const id of ids)await page.locator(`.tile[data-id="${id}"]`).click();
   // Close the actual window immediately to exercise the final save handshake.
