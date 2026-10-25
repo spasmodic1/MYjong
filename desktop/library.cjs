@@ -32,7 +32,7 @@ class Library {
   async commit() { await this.atomic('library.json', this.data); return this.snapshot(); }
   async import(files, subjectName = '') {
     return this.exclusive(async () => {
-      let added = 0, duplicates = 0; const errors = [];
+      let added = 0, duplicates = 0; const errors = [], addedIds=[];
       for (const file of files.slice(0, 500)) {
         try {
           if (!accepted.test(file)) continue;
@@ -53,11 +53,11 @@ class Library {
           if (name && !subject) { subject = { id: randomUUID(), name, included: true, kind: 'pet' }; this.data.subjects.push(subject); }
           this.data.photos.push({ id, hash, name: path.basename(file), subjectId: subject?.id || null,
             width: meta.width, height: meta.height, included: true, crop: null, revision: 0 });
-          added++;
+          added++;addedIds.push(id);
         } catch (e) { errors.push(`${path.basename(file)}: ${e.message}`); }
       }
       await this.commit();
-      return { library: this.snapshot(), added, duplicates, errors };
+      return { library: this.snapshot(), added, duplicates, errors,addedIds };
     });
   }
   file(id, variant = 'tile') {
@@ -94,6 +94,7 @@ class Library {
           if (action.subjectId && !this.data.subjects.some(s => s.id === action.subjectId)) throw Error('Unknown name');
           photo.subjectId = action.subjectId || null;
           photo.included = action.included !== false;
+          if(action.identity && Array.isArray(action.identity.box) && action.identity.box.length===4 && action.identity.box.every(Number.isFinite))photo.identity=action.identity;
         } else if (action.type === 'crop') {
           const meta = await sharp(this.file(photo.id, 'original')).metadata();
           let image = sharp(this.file(photo.id, 'original'));
@@ -104,6 +105,7 @@ class Library {
           } else photo.crop = null;
           await image.resize(360, 450, { fit: 'inside' }).jpeg({ quality: 90 }).toFile(this.file(photo.id, 'tile'));
           photo.revision++;
+          photo.framing=action.automatic?'automatic':'manual';
         } else if (action.type === 'delete') {
           // Keep files referenced by a saved game until a new game releases them.
           this.data.photos = this.data.photos.filter(p => p.id !== photo.id);

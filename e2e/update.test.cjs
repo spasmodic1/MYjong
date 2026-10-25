@@ -14,6 +14,6 @@ test('an older packaged build downloads the public GitHub update without alterin
   const result=await page.evaluate(()=>window.myjong.update());
   assert.match(result,/Update downloaded/);
   const after=await page.evaluate(()=>window.myjong.load());assert.deepEqual(after.library,before.library);assert.deepEqual(after.state.game.tiles,before.state.game.tiles);
-  const dialogs=await app.evaluate(()=>global.updateDialogs);assert.equal(dialogs.length,2);assert.match(dialogs[0],/0\.9\.0/);assert.match(dialogs[1],/ready/);
+  const dialogs=await app.evaluate(()=>global.updateDialogs);assert.equal(dialogs.length,2);assert.ok(dialogs[0].includes(require('../package.json').version));assert.match(dialogs[1],/ready/);
   console.log('Verified GitHub release check, checksum-verified download, restart prompt, and intact photos/save.');
 });

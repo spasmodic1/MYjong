@@ -19,10 +19,15 @@ Download the Windows installer from [Releases](https://github.com/spasmodic1/MYj
 - Modern porcelain tiles with large photo/symbol windows, compact controls, matched-pair effects, and Fit/+/− board zoom; motion effects respect the system's reduced-motion preference. See [visual reference notes](./DESIGN-NOTES.md).
 - Folder and file importing; JPEG, PNG, WebP, AVIF and HEIC/HEIF conversion; phone uploads over home Wi-Fi through a QR code.
 - Editable names, inclusion controls, reassignment, merging, independent copies/crops of group photos, pan/zoom/reset controls, and a full-photo option.
-- Bundled offline person-face grouping and pet framing models. All suggestions require review. Pet detection finds animal classes; users confirm individual pet identities.
+- New photos are analyzed automatically after file/folder import or phone upload. When a pet resembles confirmed library photos, MYjong asks “Is this Marley?” (or the matching name) with a reference picture. Person suggestions use face descriptors. Names always require confirmation; uncertain matches stay unnamed.
+- Clear single-subject imports are framed automatically for the tile photo window. Multiple subjects and uncertain detections stay for review; full photos are retained when a safe crop cannot fit. Manual crops, including choosing Full photo, are preserved.
 - ZIP backup/restore, with a safety backup before restoring; an Update game button that downloads releases from this repository.
 
 The starter collection contains 21 photos of five pets, supplied and approved by their owner for public distribution. Starter names are editable; any photo or subject can be excluded, and the starter collection can be removed. Original source photos are never modified by importing, framing, or deleting MYjong's copies. Future photos you import remain on your own computer and are never uploaded to GitHub.
+
+![Import review asks whether the new photo is Marley](./docs/screenshots/is-this-marley.png)
+
+The first analysis after launching can take a little longer while the bundled models initialize. Progress appears in the collection window. You can review later without losing an imported photo.
 
 ## Photos and saves
 
@@ -30,7 +35,7 @@ MYjong stores its photo library and saved game under `%APPDATA%\MYjong`, outside
 
 For phone uploads, connect both devices to the same private home Wi-Fi, open **Photo collection → Send from phone**, and scan the QR code. Leave that dialog open. Its link expires after 15 minutes and closes with the dialog. Windows may request firewall access for the private network. Public Wi-Fi, guest networks with device isolation, and corporate networks may prevent the connection. The transfer is direct local HTTP with a randomly generated session link; use a trusted home network. No cloud account is required. Device photo pickers determine how many photos can be selected together. Imports are limited to 40 MB per photo and 500 files per batch.
 
-Recognition can miss faces, confuse people, or miss small/obscured animals. Review suggested names and framing, especially group photos. The pet detector includes cats, dogs, birds and horses; it does not identify individual pets. You can always assign names and frame photos manually. Crops use the actual 4:5 photo window inside the portrait tile, with the full photo retained separately.
+Recognition can miss faces, confuse people, or miss small/obscured animals. Review suggested names and framing, especially group photos. The pet detector includes cats, dogs, birds and horses. A separate bundled DINOv2 image model compares detected animals with confirmed pet photos; these appearance-based suggestions are tentative, particularly for pets of similar breeds or coloring. MYjong never applies a suggested name without confirmation. You can always assign names and frame photos manually. Crops use the actual 4:5 photo window inside the portrait tile, with the full photo retained separately.
 
 ## Development
 
@@ -55,7 +60,7 @@ Recognition code is compiled into `assets/recognition.js`. Model files are check
 
 ## Releases and updates
 
-`release-config.json` identifies this repository. The Windows app checks GitHub only when **Update game** is selected, asks before downloading, and asks before restarting to install. Updates preserve app data and never replace an existing photo library with the starter library. First-run starter extraction happens only when no library exists.
+`release-config.json` identifies this repository. The Windows app checks GitHub only when **Settings → Check for Updates** is selected, asks before downloading, and asks before restarting to install. It does not check automatically at startup. Updates preserve app data and never replace an existing photo library with the starter library. First-run starter extraction happens only when no library exists.
 
 To publish the next version, update `package.json` and the lockfile, commit, and push a matching `vX.Y.Z` tag. GitHub Actions tests the app and publishes the installer, blockmap and `latest.yml` to a GitHub release using the workflow's repository token. No GitHub token is embedded in the app. Keep release tags and version numbers aligned. Do not upload backups or personal photo collections to releases unless those particular assets are explicitly approved for distribution.
 

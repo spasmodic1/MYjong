@@ -22,3 +22,12 @@ export function groupDetections(results) {
   }
   return groups;
 }
+export function distinctSubjects(animals,faces){
+  const intersection=(a,b)=>Math.max(0,Math.min(a[0]+a[2],b[0]+b[2])-Math.max(a[0],b[0]))*Math.max(0,Math.min(a[1]+a[3],b[1]+b[3])-Math.max(a[1],b[1]));
+  const pets=[];
+  for(const animal of [...animals].sort((a,b)=>b.score-a.score))if(!pets.some(p=>{const overlap=intersection(p.box,animal.box);return overlap/(p.box[2]*p.box[3]+animal.box[2]*animal.box[3]-overlap)>.65;}))pets.push(animal);
+  return [...pets,...faces.filter(face=>!pets.some(p=>{
+    const [x,y,w,h]=p.box,[fx,fy,fw,fh]=face.box,cx=fx+fw/2,cy=fy+fh/2;
+    return cx>x-w*.2&&cx<x+w*1.2&&cy>y-h*.2&&cy<y+h*1.2||intersection(p.box,face.box)/(fw*fh)>.35;
+  }))];
+}

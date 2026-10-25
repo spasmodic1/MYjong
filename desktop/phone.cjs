@@ -39,7 +39,7 @@ async function startPhone(library, notify) {
       await fs.writeFile(temp, Buffer.concat(chunks));
       const result = await library.import([temp]);
       if (result.errors.length) throw Error(result.errors[0]);
-      notify(); res.writeHead(200).end('Received');
+      notify(result.addedIds); res.writeHead(200).end('Received');
     } catch { if (!res.headersSent) res.writeHead(400).end('This photo could not be imported. Try a JPEG copy.'); }
     finally { active--; if (temp) await fs.rm(temp, { force: true }).catch(() => {}); }
   });

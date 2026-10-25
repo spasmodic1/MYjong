@@ -6,10 +6,12 @@ import { createAudio } from './audio.js';
 import { browserAPI } from './browser-api.js';
 import { readSave } from './storage.js';
 import { suggestedCrop, groupDetections } from './photo-analysis.js';
+import {setupImportReview} from './import-review.js';
 
 const $ = id => document.getElementById(id);
 let api, library = { photos: [], subjects: [] }, state, selected = null, highlighted = [], paused = false;
 let activeSubject = null, activeCrop = null, saveTimer, lastTick = performance.now(), saveChain = Promise.resolve();
+let importReview;
 const nextHint = createHintCycle();
 const audio = createAudio(() => state.settings);
 const time = seconds => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
@@ -234,6 +236,8 @@ function renderLibrary() {
       if (await message('Remove this copy?', 'This removes the photo from your MYjong collection. Your original photo stays untouched. A current puzzle may keep its own reference until you start a new game.', true, 'Remove copy')) await change({ type: 'delete', id: photo.id });
     });
     buttons.append(crop, copy, remove); card.append(img, select, label, buttons); grid.append(card);
+    if(!photo.subjectId){const review=document.createElement('button');review.textContent='Suggest name & crop';review.onclick=()=>importReview.reviewPhoto(photo.id);buttons.prepend(review);}
+    if(photo.framing==='automatic'){const note=document.createElement('small');note.textContent='Automatically framed · adjust anytime';note.className='auto-framing-note';card.append(note);}
   }
 }
 function editSubject(subject = null) {
@@ -251,6 +255,7 @@ async function importPhotos(folder = false, files = null) {
   library = result.library; renderLibrary();
   $('library-message').textContent = `${result.added} photos added${result.duplicates ? ` · ${result.duplicates} already in your collection` : ''}. Choose a name below to include them in puzzles.${result.errors.length ? ` ${result.errors.length} could not be imported.` : ''}`;
   if (result.errors.length) await message('Some photos need another try', result.errors.slice(0, 8).join('\n'));
+  importReview.enqueue(result.addedIds||[]);
 }
 function openCrop(photo) {
   activeCrop = photo;
@@ -353,6 +358,7 @@ function recognitionUI() {
 }
 function bind() {
   recognitionUI();
+  importReview=setupImportReview({api,getLibrary:()=>library,setLibrary:value=>{library=value;},refresh:renderLibrary,openCrop});
   const zoom=document.createElement('div');zoom.className='board-zoom';zoom.setAttribute('aria-label','Board size');
   for(const [text,label,delta]of [['−','Smaller tiles',-.25],['Fit','Fit board',0],['+','Larger tiles',.25]]) {
     const button=document.createElement('button');button.textContent=text;button.setAttribute('aria-label',label);
@@ -369,7 +375,7 @@ function bind() {
     else await message('These stacks need an earlier move', 'Undo a few matches or start another puzzle. The remaining stack shape could not be paired into a solvable arrangement.');
   });
   $('settings').onclick = openSettings; $('help').onclick = () => show('help-dialog'); $('statistics').onclick = openStats;
-  $('photos').onclick = () => { renderLibrary(); show('library-dialog'); };
+  $('photos').onclick = () => { renderLibrary(); show('library-dialog');importReview.openPending(); };
   $('win-new').onclick = () => { close('win-dialog'); openNew(); };
   for (const key of ['theme','tileStyle','available','captions','sound','music','volume']) $(key).oninput = () => {
     state.settings[key] = ['available','captions','sound','music'].includes(key) ? $(key).checked : key === 'volume' ? Number($(key).value) : $(key).value;
@@ -403,8 +409,8 @@ function bind() {
     if (!api.phone) { await message('Phone importing is in the Windows app', 'The installed app can receive photos from your phone over home Wi-Fi.'); return; }
     const result = await api.phone(); $('phone-qr').src = result.qr; $('phone-url').textContent = result.url; show('phone-dialog');
   });
-  $('phone-dialog').addEventListener('close', () => api.stopPhone?.());
-  api.onImport?.(async () => { library = await api.library(); renderLibrary(); $('library-message').textContent = 'Photos received from your phone. Choose a name to include them in puzzles.'; });
+  $('phone-dialog').addEventListener('close', () => {api.stopPhone?.();importReview.openPending();});
+  api.onImport?.(async ids => { library = await api.library(); renderLibrary(); $('library-message').textContent = 'Photos received from your phone. Looking for familiar faces…';importReview.enqueue(ids||[]); });
   for (const key of ['crop-x','crop-y','crop-zoom']) $(key).oninput = drawCrop;
   $('crop-reset').onclick = () => { $('crop-x').value = $('crop-y').value = .5; $('crop-zoom').value = 1; drawCrop(); };
   $('crop-save').onclick = () => run(() => applyCrop(cropValues())); $('crop-full').onclick = () => run(() => applyCrop(null));
@@ -448,5 +454,6 @@ async function init() {
   state.settings = { ...defaults, ...state.settings };
   $('version').textContent = `MYjong ${loaded.version}`;
   bind(); appearance(); render(loaded.recovered ? 'Your previous puzzle could not be restored. A safety copy was kept, and a fresh puzzle is ready.' : restored ? 'Welcome back. Your puzzle is just as you left it.' : 'A fresh puzzle, just for you.'); save(true);
+  importReview.enqueue(library.photos.filter(p=>!p.subjectId).map(p=>p.id));
 }
 init().catch(error => { $('status').textContent = `MYjong could not load your data: ${error.message}. Your existing files have been preserved.`; });

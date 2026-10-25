@@ -4,6 +4,7 @@ const fs = require('node:fs/promises');
 const { pathToFileURL } = require('node:url');
 const { Library, accepted } = require('./library.cjs');
 const { startPhone } = require('./phone.cjs');
+const { PetMatcher } = require('./pet-matcher.cjs');
 const root = path.resolve(__dirname, '..');
 protocol.registerSchemesAsPrivileged([{ scheme: 'myjong', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } }]);
 let window, library, phone, closeReady = false, updateConfigured=false;
@@ -30,6 +31,7 @@ const handle = (channel, fn) => ipcMain.handle(channel, async (event, ...args) =
 app.whenReady().then(async () => {
   const hasLibrary=await fs.stat(path.join(app.getPath('userData'),'library.json')).then(()=>true,()=>false);
   library = await new Library(app.getPath('userData')).init();
+  const petMatcher=new PetMatcher(library,path.join(root,'assets'));
   const starter=path.join(root,'assets','starter-collection.zip');
   if(app.isPackaged && !hasLibrary && await fs.stat(starter).then(()=>true,()=>false)) {
     const previous=await library.read('state.json',null);
@@ -93,6 +95,7 @@ app.whenReady().then(async () => {
   });
   handle('library', () => library.snapshot());
   handle('change', action => library.change(action));
+  handle('identify-pet',(id,detection)=>petMatcher.identify(id,detection));
   handle('import', async (folder = false) => {
     const result = await dialog.showOpenDialog(window, { title: folder ? 'Choose a photo folder' : 'Choose photos', properties: folder ? ['openDirectory'] : ['openFile', 'multiSelections'],
       filters: [{ name: 'Photos', extensions: ['jpg','jpeg','png','webp','heic','heif','avif'] }] });
@@ -110,7 +113,7 @@ app.whenReady().then(async () => {
     if (result.canceled) return null;
     return library.restore(result.filePaths[0]);
   });
-  handle('phone', async () => { phone?.close(); phone = await startPhone(library, () => window.webContents.send('imported')); return { url: phone.url, qr: phone.qr }; });
+  handle('phone', async () => { phone?.close(); phone = await startPhone(library, ids => window.webContents.send('imported',ids)); return { url: phone.url, qr: phone.qr }; });
   handle('stop-phone', () => { phone?.close(); phone = null; });
   handle('update', async () => {
     let config;
@@ -132,7 +135,7 @@ app.whenReady().then(async () => {
     await autoUpdater.downloadUpdate();
     const install = await dialog.showMessageBox(window, { buttons: ['Restart and install', 'Later'], cancelId: 1, message: 'The update is ready.' });
     if (install.response === 0) autoUpdater.quitAndInstall();
-    return 'Update downloaded. Use Update game when you are ready to install.';
+    return 'Update downloaded. Use Check for Updates when you are ready to install.';
   });
   await window.loadURL('myjong://app/index.html');
 }).catch(error => { dialog.showErrorBox('MYjong could not start', error.message); app.quit(); });

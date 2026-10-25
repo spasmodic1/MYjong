@@ -31,10 +31,10 @@ export async function browserAPI() {
   }
   const commit = async () => { await put('library', library); return structuredClone(library); };
   return {
-    load: async () => ({ state: await get('state'), library: structuredClone(library), version: '0.9.0 · Browser preview', desktop: false }),
+    load: async () => ({ state: await get('state'), library: structuredClone(library), version: '0.9.1 · Browser preview', desktop: false }),
     save: state => put('state', state), library: async () => structuredClone(library),
     async importPhotos(files) {
-      let added = 0; const errors = [];
+      let added = 0; const errors = [],addedIds=[];
       for (const file of files) {
         try {
           if (!/^image\//.test(file.type) || /\.hei[cf]$/i.test(file.name)) throw Error('Use the Windows app to import HEIC photos.');
@@ -43,9 +43,10 @@ export async function browserAPI() {
           const image = new Image(); image.src = src; await image.decode();
           library.photos.push({ id: crypto.randomUUID(), name: file.name, src, originalSrc: src,
             width: image.naturalWidth, height: image.naturalHeight, included: true, subjectId: null, revision: 0 }); added++;
+          addedIds.push(library.photos.at(-1).id);
         } catch (e) { errors.push(`${file.name}: ${e.message}`); }
       }
-      return { library: await commit(), added, duplicates: 0, errors };
+      return { library: await commit(), added, duplicates: 0, errors,addedIds };
     },
     async changePhoto(action) {
       if (action.type === 'subject') {
@@ -72,7 +73,7 @@ export async function browserAPI() {
             canvas.getContext('2d').drawImage(image, (w-width)*x, (h-height)*y, width, height, 0, 0, 360, 450);
             p.src = canvas.toDataURL('image/jpeg', .9);
           }
-          p.crop = action.crop; p.revision++;
+          p.crop = action.crop; p.revision++;p.framing=action.automatic?'automatic':'manual';
         }
       }
       return commit();

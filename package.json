@@ -1,6 +1,6 @@
 {
   "name": "myjong",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "A personal, offline mahjong solitaire game for Windows",
   "author": "MYjong",
   "main": "desktop/main.cjs",
@@ -14,6 +14,7 @@
     "release": "electron-builder --config release-builder.cjs --win nsis --x64 --publish onTag",
     "test:desktop": "node --test e2e/desktop.test.cjs",
     "test:models": "node --test e2e/recognition.test.cjs",
+    "test:imports": "node --test e2e/import-review.test.cjs",
     "prepare:models": "node tools/prepare-models.cjs && node tools/bundle-recognition.cjs"
   },
   "build": {
@@ -28,6 +29,9 @@
       "src/**/*.css",
       "!src/**/*.test.js",
       "!src/recognition-entry.js",
+      "!node_modules/onnxruntime-node/bin/napi-v6/darwin/**",
+      "!node_modules/onnxruntime-node/bin/napi-v6/linux/**",
+      "!node_modules/onnxruntime-node/bin/napi-v6/win32/arm64/**",
       "desktop/**/*.cjs",
       "!desktop/**/*.test.cjs",
       "assets/**",
@@ -36,7 +40,11 @@
       "package.json"
     ],
     "asar": true,
-    "asarUnpack": ["node_modules/libheif-js/**", "node_modules/@img/**"],
+    "asarUnpack": [
+      "node_modules/libheif-js/**",
+      "node_modules/@img/**",
+      "node_modules/onnxruntime-node/bin/**"
+    ],
     "win": {
       "target": "nsis",
       "signAndEditExecutable": true,
@@ -55,14 +63,15 @@
     "electron-updater": "^6.8.11",
     "heic-convert": "^2.1.0",
     "jszip": "^3.10.2",
+    "onnxruntime-node": "^1.30.0",
     "qrcode": "^1.5.4",
     "sharp": "^0.35.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@tensorflow-models/coco-ssd": "^2.2.3",
     "@tensorflow/tfjs": "^4.22.0",
     "@vladmandic/face-api": "^1.7.15",
-    "@playwright/test": "^1.64.1",
     "electron": "^45.0.0",
     "electron-builder": "^26.18.0",
     "esbuild": "^0.28.2"

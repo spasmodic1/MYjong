@@ -34,7 +34,8 @@ async function main(){
     const version=process.argv[3],folder=process.argv[4];
     if(!/^\d+\.\d+\.\d+$/.test(version) || !folder)throw Error('Provide a version and clean release folder.');
     const path=require('node:path');
-    const assets=(await fs.readdir(folder)).filter(f=>/^MYjong-Setup-\d+\.\d+\.\d+\.exe(\.blockmap)?$/.test(f)||f==='latest.yml');
+    const expected=[`MYjong-Setup-${version}.exe`,`MYjong-Setup-${version}.exe.blockmap`,'latest.yml'];
+    const assets=(await fs.readdir(folder)).filter(f=>expected.includes(f));
     if(assets.length!==3)throw Error('Expected exactly the clean installer, blockmap, and latest.yml.');
     let release;
     try{release=await request(`/repos/${profile.login}/MYjong/releases/tags/v${version}`);}catch(e){if(!e.message.includes('(404)'))throw e;}

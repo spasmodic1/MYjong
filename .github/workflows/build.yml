@@ -23,6 +23,7 @@ jobs:
       - run: npm test
       - run: npm run test:desktop
       - run: npm run test:models
+      - run: npm run test:imports
       - run: npm run build
         if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
       - run: npm run release
