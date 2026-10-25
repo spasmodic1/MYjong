@@ -39,7 +39,7 @@ async function main(){
     if(assets.length!==3)throw Error('Expected exactly the clean installer, blockmap, and latest.yml.');
     let release;
     try{release=await request(`/repos/${profile.login}/MYjong/releases/tags/v${version}`);}catch(e){if(!e.message.includes('(404)'))throw e;}
-    release ||= await request(`/repos/${profile.login}/MYjong/releases`,'POST',{tag_name:'v'+version,name:'MYjong '+version,draft:true,prerelease:false,body:await fs.readFile('RELEASE-NOTES.md','utf8')});
+    release ||= await request(`/repos/${profile.login}/MYjong/releases`,'POST',{tag_name:'v'+version,target_commitish:spawnSync('git',['rev-parse','HEAD'],{encoding:'utf8',windowsHide:true}).stdout.trim(),name:'MYjong '+version,draft:true,prerelease:false,body:await fs.readFile('RELEASE-NOTES.md','utf8')});
     for(const filename of assets){
       const old=release.assets.find(a=>a.name===filename);if(old)await request(`/repos/${profile.login}/MYjong/releases/assets/${old.id}`,'DELETE');
       const bytes=await fs.readFile(path.join(folder,filename));
