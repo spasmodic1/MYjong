@@ -12,6 +12,12 @@ export function distance(a,b) {
   if(!a || !b || a.length!==b.length) return Infinity;
   return Math.sqrt(a.reduce((sum,v,i)=>sum+(v-b[i])**2,0));
 }
+export const FACE_MODEL='ssd-full-landmarks-v1';
+export function personMatch(references) {
+  const ranked=[...references].filter(r=>Number.isFinite(r.distance)).sort((a,b)=>a.distance-b.distance);
+  const best=ranked[0],other=ranked.find(r=>r.subject.id!==best?.subject.id);
+  return best&&best.distance<.6&&(!other||other.distance-best.distance>.05)?{subjectId:best.subject.id,name:best.subject.name,referenceId:best.photo.id}:null;
+}
 export function groupDetections(results) {
   const groups=[];
   for(const result of results) {

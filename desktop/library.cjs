@@ -83,7 +83,7 @@ class Library {
           if (!Array.isArray(action.detections) || action.detections.length > 20) throw Error('Invalid detections');
           photo.analysis = action.detections.map(d => {
             if (!Array.isArray(d.box) || d.box.length !== 4 || !d.box.every(Number.isFinite)) throw Error('Invalid detection box');
-            return { kind: String(d.kind).slice(0,20), score:clamp(d.score,0,1), box:d.box,
+            return { kind: String(d.kind).slice(0,20), model:String(d.model||'').slice(0,80), score:clamp(d.score,0,1), box:d.box,
               descriptor:Array.isArray(d.descriptor) && d.descriptor.length === 128 && d.descriptor.every(Number.isFinite) ? d.descriptor : null };
           });
         } else if (action.type === 'copy') {

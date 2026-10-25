@@ -31,7 +31,7 @@ export async function browserAPI() {
   }
   const commit = async () => { await put('library', library); return structuredClone(library); };
   return {
-    load: async () => ({ state: await get('state'), library: structuredClone(library), version: '0.9.1 · Browser preview', desktop: false }),
+    load: async () => ({ state: await get('state'), library: structuredClone(library), version: '0.9.2 · Browser preview', desktop: false }),
     save: state => put('state', state), library: async () => structuredClone(library),
     async importPhotos(files) {
       let added = 0; const errors = [],addedIds=[];

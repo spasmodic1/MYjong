@@ -205,9 +205,11 @@ async function change(action) { library = await api.changePhoto(action); renderL
 function option(text, value) { const node = document.createElement('option'); node.textContent = text; node.value = value; return node; }
 function renderLibrary() {
   const filter = $('subject-filter'), old = filter.value;
-  filter.replaceChildren(option('All photos','all'), option('Needs a name','unassigned'), ...library.subjects.map(s => option(s.name,s.id)));
-  filter.value = [...filter.options].some(o => o.value === old) ? old : 'all';
-  $('library-count').textContent = `${library.photos.length} photos · ${library.subjects.length} names`;
+  const unnamed=library.photos.filter(p=>!p.subjectId).length;
+  const needsName=option(`Needs a name (${unnamed})`,'unassigned');needsName.disabled=unnamed===0;
+  filter.replaceChildren(option('All photos','all'), needsName, ...library.subjects.map(s => option(s.name,s.id)));
+  filter.value = [...filter.options].some(o => o.value === old&&!o.disabled) ? old : 'all';
+  if(old==='unassigned'&&unnamed===0)$('library-message').textContent='All photos now have names. Showing your full collection.';
   const subjects = $('subject-list'); subjects.replaceChildren();
   for (const s of library.subjects) {
     const button = document.createElement('button'); button.className = `subject-chip${s.included ? '' : ' excluded'}`;
@@ -215,8 +217,17 @@ function renderLibrary() {
   }
   const grid = $('photo-grid'); grid.replaceChildren();
   const visible = library.photos.filter(p => filter.value === 'all' || filter.value === 'unassigned' && !p.subjectId || p.subjectId === filter.value);
+  $('library-count').textContent = filter.value==='all'
+    ? `${library.photos.length} photos · ${library.subjects.length} names`
+    : `Showing ${visible.length} of ${library.photos.length} photos · ${filter.selectedOptions[0].textContent}`;
   if (!visible.length) {
-    const empty = document.createElement('p'); empty.className = 'empty-collection'; empty.textContent = library.photos.length ? 'No photos in this group yet.' : 'A few favorite faces will make this feel like home. Add your first photos above.'; grid.append(empty);
+    const empty = document.createElement('div'); empty.className = 'empty-collection';
+    const text=document.createElement('p');text.textContent=library.photos.length
+      ? filter.value==='unassigned'?'All your photos have names. The rest of your collection is hidden by this filter.':'No photos match this filter. Your other photos are still in the collection.'
+      : 'A few favorite faces will make this feel like home. Add your first photos above.';
+    empty.append(text);
+    if(library.photos.length){const all=document.createElement('button');all.id='show-all-photos';all.textContent='Show all photos';all.onclick=()=>{filter.value='all';renderLibrary();};empty.append(all);}
+    grid.append(empty);
   }
   for (const photo of visible) {
     const card = document.createElement('article'); card.className = 'photo-card';
@@ -375,7 +386,7 @@ function bind() {
     else await message('These stacks need an earlier move', 'Undo a few matches or start another puzzle. The remaining stack shape could not be paired into a solvable arrangement.');
   });
   $('settings').onclick = openSettings; $('help').onclick = () => show('help-dialog'); $('statistics').onclick = openStats;
-  $('photos').onclick = () => { renderLibrary(); show('library-dialog');importReview.openPending(); };
+  $('photos').onclick = () => { $('subject-filter').value='all';renderLibrary();$('library-dialog').scrollTop=0;show('library-dialog');importReview.openPending(); };
   $('win-new').onclick = () => { close('win-dialog'); openNew(); };
   for (const key of ['theme','tileStyle','available','captions','sound','music','volume']) $(key).oninput = () => {
     state.settings[key] = ['available','captions','sound','music'].includes(key) ? $(key).checked : key === 'volume' ? Number($(key).value) : $(key).value;

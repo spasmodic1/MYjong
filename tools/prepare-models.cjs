@@ -4,7 +4,7 @@ const crypto = require('node:crypto');
 async function main() {
   const root = path.resolve(__dirname,'..'), folder = path.join(root,'assets','models');
   await fs.mkdir(folder,{recursive:true});
-  for (const name of ['tiny_face_detector_model','face_landmark_68_tiny_model','face_recognition_model']) {
+  for (const name of ['tiny_face_detector_model','face_landmark_68_tiny_model','ssd_mobilenetv1_model','face_landmark_68_model','face_recognition_model']) {
     for (const suffix of ['.bin','-weights_manifest.json']) await fs.copyFile(path.join(root,'node_modules/@vladmandic/face-api/model',name+suffix),path.join(folder,name+suffix));
   }
   const petFolder=path.join(folder,'pets'); await fs.mkdir(petFolder,{recursive:true});

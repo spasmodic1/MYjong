@@ -21,13 +21,15 @@ Download the Windows installer from [Releases](https://github.com/spasmodic1/MYj
 - Editable names, inclusion controls, reassignment, merging, independent copies/crops of group photos, pan/zoom/reset controls, and a full-photo option.
 - New photos are analyzed automatically after file/folder import or phone upload. When a pet resembles confirmed library photos, MYjong asks “Is this Marley?” (or the matching name) with a reference picture. Person suggestions use face descriptors. Names always require confirmation; uncertain matches stay unnamed.
 - Clear single-subject imports are framed automatically for the tile photo window. Multiple subjects and uncertain detections stay for review; full photos are retained when a safe crop cannot fit. Manual crops, including choosing Full photo, are preserved.
-- ZIP backup/restore, with a safety backup before restoring; an Update game button that downloads releases from this repository.
+- ZIP backup/restore, with a safety backup before restoring; a Check for Updates button that downloads releases from this repository.
 
 The starter collection contains 21 photos of five pets, supplied and approved by their owner for public distribution. Starter names are editable; any photo or subject can be excluded, and the starter collection can be removed. Original source photos are never modified by importing, framing, or deleting MYjong's copies. Future photos you import remain on your own computer and are never uploaded to GitHub.
 
 ![Import review asks whether the new photo is Marley](./docs/screenshots/is-this-marley.png)
 
 The first analysis after launching can take a little longer while the bundled models initialize. Progress appears in the collection window. You can review later without losing an imported photo.
+
+Person suggestions use SSD MobileNet face detection and full 68-point landmarks. Older reference photos are refreshed locally when needed. Confirming a name also helps with later photos in the same upload batch. Photo Collection opens with all photos visible, and the Needs a name filter is disabled when empty.
 
 ## Photos and saves
 
@@ -53,6 +55,8 @@ The installed game needs neither Node nor internet. A browser preview can also b
 npm test                 # Rules, deals, saves, crops, library and backups
 npm run test:desktop     # Hidden Electron integration test
 npm run test:models      # Bundled model inference; rejects remote requests
+npm run test:imports     # Real pet-name prompt and manual framing preservation
+npm run test:collection  # Filters, naming, reopening and photo preservation
 npm run build            # Windows NSIS installer, blockmap and latest.yml
 ```
 

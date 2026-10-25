@@ -1,12 +1,10 @@
-MYjong 0.9.1 makes photo importing personal automatically.
+MYjong 0.9.2 improves familiar-face suggestions and photo collection navigation.
 
-- File imports, folder discovery, and phone uploads now analyze new photos automatically. Existing unnamed photos are also checked when the app opens.
-- Familiar pets can trigger an “Is this Marley?” question, using offline image comparisons with confirmed photos in your collection. A confirmed reference photo appears beside the new photo. Names are applied only when you confirm them; uncertain matches remain for manual naming.
-- Clear single-subject photos receive automatic tile framing. Multiple subjects and uncertain detections stay for review; the full photo remains available. Manual framing and Full photo choices are preserved.
-- Review later, choose a different name, add a new name, or adjust the crop directly from the import review.
-- The settings button is now called **Check for Updates**. Update checks remain manual, with confirmation before download and installation.
-- The win dialog’s dismiss button is now **Close**.
+- A stronger offline face detector and full face landmarks improve recognition across different poses. Older reference photos are reanalyzed when needed; suggested names always require confirmation.
+- Confirming a person's name can help identify later photos in the same upload batch.
+- Opening Photo Collection shows all photos. Filtered views clearly show how many photos are visible, with a way to return to the full collection.
+- “Needs a name” is disabled when empty. Naming the last unnamed photo returns to the full collection.
 
-The appearance model and CPU runtime are bundled for offline use; the installer is larger. Similar-looking pets can still be confused, so all suggested names need confirmation. Updates retain your existing photos, names, crops, and saved game.
+Updates preserve your photos, names, manual crops, and saved game. Recognition remains a tentative suggestion and can make mistakes.
 
-Install `MYjong-Setup-0.9.1.exe`, or use **Settings → Check for Updates** in an older version. This review installer remains unsigned.
+Use **Settings → Check for Updates**, or install `MYjong-Setup-0.9.2.exe`. This review installer remains unsigned.

@@ -1,6 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {suggestedCrop,groupDetections,distinctSubjects} from './photo-analysis.js';
+import {suggestedCrop,groupDetections,distinctSubjects,personMatch} from './photo-analysis.js';
+test('person suggestions tolerate pose changes but reject distant and ambiguous names',()=>{
+  const ref=(id,distance)=>({subject:{id,name:id},photo:{id:`photo-${id}`},distance});
+  assert.equal(personMatch([ref('A',.577)]).subjectId,'A');
+  assert.equal(personMatch([ref('A',.61)]),null);
+  assert.equal(personMatch([ref('A',.52),ref('B',.55)]),null);
+  assert.equal(personMatch([ref('A',.52),ref('A',.53),ref('B',.64)]).subjectId,'A');
+  assert.equal(personMatch([]),null);
+});
 test('crop suggestions include the detected subject and use full photo for wide groups',()=>{
   const crop=suggestedCrop([300,200,100,100],1000,800,'person');
   assert.ok(crop && crop.zoom>=1 && crop.zoom<=5);

@@ -1,5 +1,5 @@
 import {photoUrl} from './game.js';
-import {suggestedCrop,distance,distinctSubjects} from './photo-analysis.js';
+import {suggestedCrop,distance,distinctSubjects,FACE_MODEL,personMatch} from './photo-analysis.js';
 
 // Shared by file, folder, phone and resumed imports. Names always need confirmation.
 export function setupImportReview({api,getLibrary,setLibrary,refresh,openCrop}){
@@ -30,7 +30,16 @@ export function setupImportReview({api,getLibrary,setLibrary,refresh,openCrop}){
     $('import-review-count').textContent=`${pending.length} ${pending.length===1?'subject':'subjects'} left to review. Names are never applied without your confirmation.`;
     if(!dialog.open)dialog.showModal();
   }
-  function next(){pending.shift();current=null;refresh();showNext();}
+  async function next(){
+    pending.shift();current=null;refresh();
+    // A name confirmed moments ago can identify the next photo in the same batch.
+    const item=pending[0];
+    if(item?.kind==='person'){
+      try{item.suggestion=await personSuggestion(item.detection,await import('../assets/recognition.js'));}
+      catch{/* Keep manual naming available if a reference cannot be read. */}
+    }
+    showNext();
+  }
   reviewButton.onclick=showNext;$('import-review-later').onclick=()=>dialog.close();$('import-review-skip').onclick=next;
   $('import-review-no').onclick=()=>{$('import-name-editor').hidden=false;$('import-review-name').value='';$('import-review-new-name').value='';$('import-review-no').hidden=true;$('import-review-title').textContent=current.kind==='person'?'Who is this?':'Which pet is this?';$('import-review-yes').textContent='Save name';};
   $('import-review-adjust').onclick=async()=>{try{if(used.has(current.sourceId)){await write({type:'copy',id:current.sourceId});current.sourceId=getLibrary().photos.at(-1).id;}const p=getLibrary().photos.find(p=>p.id===current.sourceId);if(p)openCrop(p);}catch(e){$('import-review-explanation').textContent=e.message;}};
@@ -52,7 +61,7 @@ export function setupImportReview({api,getLibrary,setLibrary,refresh,openCrop}){
         if($('import-review-use-crop').checked&&current.crop&&JSON.stringify(photo.crop)!==JSON.stringify(current.crop))await write({type:'crop',id:photo.id,crop:current.crop,automatic:true});
         else if(!$('import-review-use-crop').checked&&current.autoFramed)await write({type:'crop',id:photo.id,crop:null});
       }
-      used.add(current.sourceId);next();
+      used.add(current.sourceId);await next();
     }catch(e){$('import-review-explanation').textContent=e.message;}finally{button.disabled=false;}
   };
   function preview(image,crop){
@@ -66,12 +75,16 @@ export function setupImportReview({api,getLibrary,setLibrary,refresh,openCrop}){
     for(const photo of getLibrary().photos){
       const subject=getLibrary().subjects.find(s=>s.id===photo.subjectId&&s.kind==='person');if(!subject)continue;
       let faces=(photo.analysis||[]).filter(d=>d.kind==='person');
-      if(!faces.length){const img=new Image();img.crossOrigin='anonymous';img.src=photo.originalSrc||photoUrl(photo,true);await img.decode();faces=await engine.detectFaces(img);await write({type:'analysis',id:photo.id,detections:[...(photo.analysis||[]).filter(d=>d.kind!=='person'),...faces]});}
-      const face=photo.identity?.kind==='person'?photo.identity:faces.length===1?faces[0]:null;
+      if(!faces.length||faces.some(f=>f.model!==FACE_MODEL)){
+        const img=new Image();img.crossOrigin='anonymous';img.src=photo.originalSrc||photoUrl(photo,true);await img.decode();
+        const scale=Math.min(1,1280/Math.max(img.naturalWidth,img.naturalHeight)),canvas=document.createElement('canvas');canvas.width=Math.round(img.naturalWidth*scale);canvas.height=Math.round(img.naturalHeight*scale);canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+        faces=(await engine.detectFaces(canvas)).map(f=>({...f,box:f.box.map(v=>v/scale)}));
+        await write({type:'analysis',id:photo.id,detections:[...(photo.analysis||[]).filter(d=>d.kind!=='person'),...faces]});
+      }
+      const face=photo.identity?.kind==='person'&&photo.identity.model===FACE_MODEL?photo.identity:faces.length===1?faces[0]:null;
       if(face?.descriptor)references.push({subject,photo,distance:distance(face.descriptor,detection.descriptor)});
     }
-    references.sort((a,b)=>a.distance-b.distance);const best=references[0],other=references.find(r=>r.subject.id!==best?.subject.id);
-    return best&&best.distance<.48&&(!other||other.distance-best.distance>.05)?{subjectId:best.subject.id,name:best.subject.name,referenceId:best.photo.id}:null;
+    return personMatch(references);
   }
   async function analyze(id,engine){
     let photo=getLibrary().photos.find(p=>p.id===id);if(!photo||photo.subjectId)return;
