@@ -2,6 +2,10 @@ import {isFree} from './rules.js';
 export const validRaceInterval=value=>Number.isInteger(value)&&value>=5&&value<=120;
 export const raceNextAt=race=>(race.firstAt??race.interval)+race.waves*race.interval;
 export const raceFinished=game=>game.mode==='race'&&game.race?.ended;
+export function raceOddFaces(game){
+  const counts=new Map();for(const tile of game.tiles)if(!tile.removed)counts.set(tile.face,(counts.get(tile.face)||0)+1);
+  return [...counts].filter(([,count])=>count%2).map(([face])=>face);
+}
 export function addRacePair(game,random=Math.random){
   const active=game.tiles.filter(t=>!t.removed),available=game.tiles.filter(t=>t.removed&&
     (t.z===0||active.some(b=>b.x===t.x&&b.y===t.y&&b.z===t.z-1))&&
@@ -19,12 +23,19 @@ export function addRacePair(game,random=Math.random){
   }
   if(!placement)return [];
   const {a,b,partners}=placement,before=[{...a},{...b}];
-  // Match an existing open tile without changing any tile already on the board.
-  // Adding equal faces keeps counts even, so the new tiles cannot strand a face.
-  const choices=partners.length?partners:game.tiles;
-  const face=choices[Math.floor(random()*choices.length)].face;
-  for(const tile of [a,b]){tile.removed=false;tile.face=face;if(face<10)tile.variant=Math.floor(random()*game.photos[face].variants.length);else delete tile.variant;}
-  game.history.push({type:'arrival',tiles:before});game.race.waves++;game.race.nextAt=raceNextAt(game.race);
+  // Prefer unmatched faces from earlier drops, so later arrivals supply partners.
+  const odd=raceOddFaces(game),pool=[...new Set(game.tiles.map(tile=>tile.face))];
+  const open=[...new Set(partners.map(tile=>tile.face))],preferred=open.filter(face=>odd.includes(face));
+  const firstChoices=preferred.length?preferred:open.length?open:odd.length?odd:pool;
+  const first=firstChoices[Math.floor(random()*firstChoices.length)];
+  const owed=odd.filter(face=>face!==first),others=pool.filter(face=>face!==first);
+  const secondChoices=owed.length?owed:others.length?others:[first];
+  const second=secondChoices[Math.floor(random()*secondChoices.length)];
+  for(const [index,tile] of [a,b].entries()){
+    tile.removed=false;tile.face=index===0?first:second;
+    if(tile.face<10)tile.variant=Math.floor(random()*game.photos[tile.face].variants.length);else delete tile.variant;
+  }
+  game.history.push({type:'arrival',tiles:before,...first!==second?{mixed:true}:{} });game.race.waves++;game.race.nextAt=raceNextAt(game.race);
   return [a.id,b.id];
 }
 export function advanceRace(game,seconds,random=Math.random){

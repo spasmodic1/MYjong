@@ -1,6 +1,6 @@
 {
   "name": "myjong",
-  "version": "0.9.4",
+  "version": "0.9.8",
   "description": "A personal, offline mahjong solitaire game for Windows",
   "author": "MYjong",
   "main": "desktop/main.cjs",
@@ -9,7 +9,7 @@
   "scripts": {
     "test": "node --test src/*.test.js desktop/*.test.cjs",
     "start": "electron .",
-    "build": "electron-builder --config release-builder.cjs --win nsis --x64 --publish never",
+    "build": "electron-builder --config release-builder.cjs --win nsis --x64 --publish never && node tools/verify-package.cjs",
     "build:portable": "electron-builder --win portable --x64 --publish never",
     "release": "electron-builder --config release-builder.cjs --win nsis --x64 --publish onTag",
     "test:desktop": "node --test e2e/desktop.test.cjs",
@@ -63,7 +63,8 @@
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
       "deleteAppDataOnUninstall": false,
-      "createDesktopShortcut": true
+      "createDesktopShortcut": true,
+      "include": "desktop/installer.nsh"
     },
     "publish": null
   },

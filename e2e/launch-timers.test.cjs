@@ -3,13 +3,19 @@ const fs=require('node:fs/promises'),path=require('node:path'),os=require('node:
 const {_electron:electron}=require('@playwright/test');const root=path.resolve(__dirname,'..');
 test('maximized welcome, custom menu palette, live preview and timed Memory reveals',{timeout:60000},async t=>{
  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'myjong-updates-'));
- const app=await electron.launch({args:[root],env:{...process.env,MYJONG_TEST_DATA:dir,MYJONG_SMOKE:'1'}});
+ const app=await electron.launch({...process.env.MYJONG_TEST_PACKAGE==='1'?{executablePath:path.join(root,'dist/win-unpacked/MYjong.exe')}:{args:[root]},env:{...process.env,MYJONG_TEST_DATA:dir,MYJONG_SMOKE:'1'}});
  t.after(async()=>{await app.close();await fs.rm(dir,{recursive:true,force:true});});
  const page=await app.firstWindow();page.waitForFunction=async(fn,arg,options={})=>{const end=Date.now()+(options.timeout||40000);while(Date.now()<end){if(await page.evaluate(fn,arg))return;await new Promise(resolve=>setTimeout(resolve,100));}throw Error('Timed out waiting for '+fn.toString());};page.setDefaultTimeout(12000);const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.waitForSelector('#splash-dialog[open]');assert.equal(await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].isMaximized()),true);
  await page.keyboard.press('x');assert.equal(await page.locator('#splash-dialog').isVisible(),false);await page.waitForSelector('#board .tile');
  await page.emulateMedia({reducedMotion:'reduce'});
- await page.locator('#settings').click();await page.locator('#theme').selectOption('custom');
+ await page.locator('#new').click();
+ for(const [id,value] of Object.entries({layout:'Random',difficulty:'1',collection:'mixed',matching:'subject',mode:'relaxed'}))assert.equal(await page.locator('#'+id).inputValue(),value);
+ await page.locator('#new-dialog [data-close]').first().click();
+ await page.locator('#settings').click();
+ for(const [id,value] of Object.entries({theme:'blue',tileStyle:'porcelain',tileColor:'classic',textSize:'comfortable',musicTrack:'garden',menuMusicTrack:'moonlight',volume:'0.45',backgroundColor:'#64496e'}))assert.equal(await page.locator('#'+id).inputValue(),value);
+ for(const [id,value] of Object.entries({available:false,captions:false,sound:true,music:false}))assert.equal(await page.locator('#'+id).isChecked(),value);
+ await page.locator('#theme').selectOption('custom');
  await page.locator('#backgroundColor').evaluate(el=>{el.value='#e9d7b8';el.dispatchEvent(new Event('input',{bubbles:true}));});
  assert.equal(await page.locator('#settings-dialog').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(233, 215, 184)');
  assert.equal(await page.locator('#settings-dialog').evaluate(el=>getComputedStyle(el).color),'rgb(0, 0, 0)');

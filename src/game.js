@@ -4,9 +4,9 @@ import {musicChoices,tileColors,validColor} from './personalization.js';
 import {validRaceInterval,raceNextAt} from './race.js';
 import {validScore} from './scoreboard.js';
 
-export const defaults = { layout: 'Random', difficulty: 1, theme: '', collection: 'mixed',
-  matching: 'identical', mode: 'relaxed', raceInterval:15, memoryInterval:0, available: true, captions: true,
-  sound: true, music: false, musicTrack:'garden', menuMusicTrack:'welcome', volume: .3, tileStyle: 'porcelain', tileColor:'classic', backgroundColor:'#164c42', textSize:'comfortable', playerName:'', zoom: 1 };
+export const defaults = { layout: 'Random', difficulty: 1, theme: 'blue', collection: 'mixed',
+  matching: 'subject', mode: 'relaxed', raceInterval:5, memoryInterval:4, available: false, captions: false,
+  sound: true, music: false, musicTrack:'garden', menuMusicTrack:'moonlight', volume: .45, tileStyle: 'porcelain', tileColor:'classic', backgroundColor:'#64496e', textSize:'comfortable', playerName:'', zoom: 1 };
 export const emptyStats = () => ({ played: 0, won: 0, matches: 0, best: {}, achievements: [] });
 export const photoUrl = (p, original = false) => p.src || `myjong://app/photo/${p.id}/${original ? 'original' : 'tile'}?v=${p.revision || 0}`;
 export function makeGame(settings, library, random = Math.random) {
@@ -132,7 +132,8 @@ export function validState(state) {
         const original=entry.swapped,tile=rewind.find(t=>t.id===original.id);
         if(!tile||tile.removed||original.removed!==false||current.some(t=>t.id===tile.id)||original.x!==tile.x||original.y!==tile.y||original.z!==tile.z||original.face!==current[1].face||tile.face!==current[0].face)return false;
         Object.assign(tile,original);
-      }else if(current[0].face!==current[1].face)return false;
+      }else if(entry.mixed===true){if(current[0].face===current[1].face)return false;}
+      else if(entry.mixed!==undefined||current[0].face!==current[1].face)return false;
       for(const before of entry.tiles){
         const tile=rewind.find(t=>t.id===before.id);
         if(before.removed!==true||before.x!==tile.x||before.y!==tile.y||before.z!==tile.z

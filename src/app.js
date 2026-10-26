@@ -8,7 +8,7 @@ import { readSave } from './storage.js';
 import { suggestedCrop, groupDetections } from './photo-analysis.js';
 import {setupImportReview} from './import-review.js';
 import {musicChoices,tileColors,backgroundInk} from './personalization.js';
-import {advanceRace,raceFinished,raceNextAt} from './race.js';
+import {advanceRace,raceFinished,raceNextAt,raceOddFaces} from './race.js';
 import {cleanPlayerName,scoreCategory,rankScores} from './scoreboard.js';
 import {revealMemoryTile} from './memory.js';
 import {setupScrollHints} from './scroll-hints.js';
@@ -99,7 +99,7 @@ function updateCounters() {
   $('race-countdown').hidden=g.mode!=='race';
   if(g.mode==='race'){
     const seconds=Math.max(0,Math.ceil(g.race.nextAt-g.elapsed));
-    $('race-countdown').textContent=raceFinished(g)?'Race over · board too full':g.recorded?'Board cleared':`Next pair in ${seconds}s`;
+    $('race-countdown').textContent=raceFinished(g)?'Race over · board too full':g.recorded?'Board cleared':`Next tiles in ${seconds}s`;
     $('race-countdown').classList.toggle('race-urgent',!raceFinished(g)&&!g.recorded&&seconds<=5);
   }
   $('clock').textContent = time(g.elapsed); $('score').textContent = `${score(g)} points`;
@@ -111,7 +111,7 @@ function updateCounters() {
   $('undo').disabled = memoryBusy || !g.history.length || g.history.at(-1)?.type==='arrival' || g.recorded || raceFinished(g);
   $('undo').title=g.mode==='race'?'Undo moves since the latest incoming pair (Ctrl+Z)':'Undo (Ctrl+Z)';
   $('hint').disabled = $('shuffle').disabled = memoryBusy || remaining === 0 || raceFinished(g);
-  $('show-loss-options').hidden=remaining===0||moves>0||raceFinished(g);
+  $('show-loss-options').hidden=g.mode==='race'||remaining===0||moves>0||raceFinished(g);
   return { remaining, moves };
 }
 function render(message = '') {
@@ -141,7 +141,7 @@ function render(message = '') {
   sizeBoard();
   const { remaining, moves } = updateCounters();
   arriving=[];
-  setMessage(message || (raceFinished(game())?'Race over — the board is too crowded for the next two tiles to land. Start a new race to try again.':remaining === 0 ? 'A lovely little victory. Your board is clear.' : moves === 0 ? 'No open matches right now. Try Undo or Shuffle.' : 'Choose two free tiles with matching faces.'));
+  setMessage(message || (raceFinished(game())?'Race over — the board is too crowded for the next two tiles to land. Start a new race to try again.':remaining === 0 ? 'A lovely little victory. Your board is clear.' : moves === 0 ? (game().mode==='race'?'No open matches. Keep an eye on the countdown: later drops can bring missing partners.':'No open matches right now. Try Undo or Shuffle.') : 'Choose two free tiles with matching faces.'));
   if (focused) (board.querySelector(`[data-id="${focused}"]`) || board.querySelector('.tile:not(.blocked)'))?.focus({ preventScroll: true });
   save();
   if(moves>0||remaining===0){lossSignature=null;rollbackPlan=null;lossWorker?.terminate();lossWorker=null;}
@@ -150,7 +150,7 @@ function render(message = '') {
 const boardSignature=()=>game().tiles.map(t=>`${t.id}:${t.face}:${t.removed}`).join('|');
 function offerLossRecovery(force=false){
   const g=game();
-  if(g.recorded||raceFinished(g)||!g.tiles.some(t=>!t.removed)||pairs(g.tiles).length||document.querySelector('dialog[open]'))return;
+  if(g.mode==='race'||g.recorded||raceFinished(g)||!g.tiles.some(t=>!t.removed)||pairs(g.tiles).length||document.querySelector('dialog[open]'))return;
   const signature=boardSignature();if(!force&&signature===lossSignature)return;
   lossSignature=signature;rollbackPlan=null;
   $('loss-description').textContent='There are no matching free pairs left. Checking which move first closed the path to a clear board…';
@@ -243,7 +243,7 @@ function hint() {
   if (raceFinished(game())||game().tiles.every(t => t.removed)) return;
   selected = null; highlighted = nextHint(game().tiles).map(t => t.id);
   if (highlighted.length) game().hints++;
-  render(highlighted.length ? 'A pair for you. Press Hint again to see another.' : 'No open pairs. Try Undo or Shuffle.');
+  render(highlighted.length ? 'A pair for you. Press Hint again to see another.' : game().mode==='race'?'No open pairs. Wait for the next drop to bring more partners.':'No open pairs. Try Undo or Shuffle.');
 }
 function undo() {
   if(memoryBusy||dealing)return;
@@ -534,6 +534,7 @@ function bind() {
   $('undo').onclick = undo; $('hint').onclick = hint;
   $('shuffle').onclick = () => run(async () => {
     if(memoryBusy||dealing||raceFinished(game()))return;
+    if(game().mode==='race'&&raceOddFaces(game()).length){setMessage('Some tiles need partners from a later drop. Match available pairs or wait for the next drop before shuffling.');return;}
     if (!await message('Give these tiles a fresh start?', 'Shuffle keeps your matched pairs and rearranges the remaining faces. It can be undone.', true, 'Shuffle')) return;
     const before = structuredClone(game().tiles);
     if (reshuffle(game())) { game().history.push({ type: 'shuffle', tiles: before }); game().shuffles++; selected = null; highlighted = []; render('A fresh arrangement. There’s a path through these tiles.'); }

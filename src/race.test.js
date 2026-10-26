@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {makeGame,defaults,emptyStats,validState,score,reshuffle} from './game.js';
-import {advanceRace,addRacePair} from './race.js';
+import {advanceRace,addRacePair,raceOddFaces} from './race.js';
 import {pairs,isFree} from './rules.js';
 const library={photos:[],subjects:[]};
 const stateFor=game=>({version:2,settings:{...defaults,mode:'race',raceInterval:game.race.interval},stats:emptyStats(),game});
@@ -11,11 +11,11 @@ test('race arrivals obey the interval, preserve score and restore safe matching 
   const initial=structuredClone(game.tiles),pair=pairs(game.tiles)[0];remove(game,pair);
   assert.equal(score(game),100);assert.deepEqual(advanceRace(game,29).added,[]);
   const result=advanceRace(game,1);assert.equal(result.added.length,2);assert.equal(result.lost,false);
-  const added=result.added.map(id=>game.tiles.find(t=>t.id===id));assert.ok(added.every(t=>pairs(game.tiles).some(pair=>pair.includes(t))));
+  const added=result.added.map(id=>game.tiles.find(t=>t.id===id));assert.ok(added.some(t=>pairs(game.tiles).some(pair=>pair.includes(t))));
   assert.ok(added.every(t=>isFree(t,game.tiles)));assert.equal(score(game),100);assert.equal(validState(stateFor(game)),true);
   assert.equal(game.race.nextAt,35);assert.equal(game.tiles.length,initial.length);
   remove(game,pairs(game.tiles)[0]);assert.equal(score(game),200);assert.equal(validState(stateFor(game)),true);
-  const before=structuredClone(game.tiles);assert.equal(reshuffle(game),true);game.history.push({type:'shuffle',tiles:before});
+  assert.equal(reshuffle(game),false,'shuffle waits for partners when the board has unmatched incoming faces');
   assert.equal(validState(stateFor(game)),true,'arrival history remains valid across later matches and shuffles');
 });
 test('full boards end the race once and completed games never receive tiles',()=>{
@@ -49,11 +49,11 @@ test('drops match an existing available tile without changing existing faces',()
  remove(game,[game.tiles[4],game.tiles[5]]);
  const existing=structuredClone(game.tiles.filter(t=>!t.removed));
  const ids=addRacePair(game,()=>0),added=ids.map(id=>game.tiles.find(t=>t.id===id));
- assert.equal(added[0].face,added[1].face);assert.equal(game.history.at(-1).swapped,undefined);
+ assert.notEqual(added[0].face,added[1].face);assert.equal(game.history.at(-1).swapped,undefined);
  assert.deepEqual(game.tiles.filter(t=>existing.some(old=>old.id===t.id)),existing);
  assert.ok(existing.some(old=>old.face===added[0].face&&isFree(game.tiles.find(t=>t.id===old.id),game.tiles)));
- for(const face of new Set(game.tiles.map(t=>t.face)))assert.equal(game.tiles.filter(t=>!t.removed&&t.face===face).length%2,0);
- for(const tile of added){const pair=pairs(game.tiles).find(p=>p.includes(tile));assert.ok(pair);remove(game,pair);}
+ assert.equal(raceOddFaces(game).length,2);
+ const next=addRacePair(game,()=>0);assert.equal(next.length,0,'a full board still ends the race');
  assert.equal(validState(stateFor(game)),true);
 });
 
@@ -63,4 +63,17 @@ test('arrivals preserve the face of the selected tile during drops',()=>{
  remove(game,[game.tiles[4],game.tiles[5]]);
  const selected=structuredClone(game.tiles[0]);assert.equal(addRacePair(game,()=>0).length,2);
  assert.deepEqual(game.tiles[0],selected);assert.notEqual(game.history.at(-1).swapped?.id,selected.id);assert.equal(validState(stateFor(game)),true);
+});
+
+test('later mixed drops supply missing partners and permit a complete clear',()=>{
+ const game=makeGame({...defaults,mode:'race'},library);
+ game.tiles=Array.from({length:8},(_,id)=>({id,x:(id%3)*3,y:Math.floor(id/3)*2,z:0,face:10+Math.floor(id/2),removed:false}));
+ remove(game,[game.tiles[6],game.tiles[7]]);addRacePair(game,()=>0);
+ while(pairs(game.tiles).length)remove(game,pairs(game.tiles)[0]);
+ assert.equal(game.tiles.filter(t=>!t.removed).length,2);assert.equal(raceOddFaces(game).length,2);
+ assert.equal(validState(stateFor(game)),true);const existing=structuredClone(game.tiles.filter(t=>!t.removed));
+ const ids=addRacePair(game,()=>0);assert.equal(ids.length,2);assert.equal(raceOddFaces(game).length,0);
+ assert.deepEqual(game.tiles.filter(t=>existing.some(old=>old.id===t.id)),existing);
+ while(pairs(game.tiles).length)remove(game,pairs(game.tiles)[0]);
+ assert.ok(game.tiles.every(t=>t.removed));assert.equal(validState(stateFor(game)),true);
 });
