@@ -1,8 +1,11 @@
 import { deal, isFree } from './rules.js';
+import {musicChoices,tileColors,validColor} from './personalization.js';
+import {validRaceInterval} from './race.js';
+import {validScore} from './scoreboard.js';
 
 export const defaults = { layout: 'Random', difficulty: 1, theme: '', collection: 'mixed',
-  matching: 'identical', mode: 'relaxed', available: true, captions: true,
-  sound: true, music: false, volume: .3, tileStyle: 'porcelain', zoom: 1 };
+  matching: 'identical', mode: 'relaxed', raceInterval:15, available: true, captions: true,
+  sound: true, music: false, musicTrack:'garden', volume: .3, tileStyle: 'porcelain', tileColor:'classic', backgroundColor:'#164c42', textSize:'comfortable', playerName:'', zoom: 1 };
 export const emptyStats = () => ({ played: 0, won: 0, matches: 0, best: {}, achievements: [] });
 export const photoUrl = (p, original = false) => p.src || `myjong://app/photo/${p.id}/${original ? 'original' : 'tile'}?v=${p.revision || 0}`;
 export function makeGame(settings, library, random = Math.random) {
@@ -28,7 +31,8 @@ export function makeGame(settings, library, random = Math.random) {
   });
   const game = { tiles: board.map(t => ({ ...t })), layout: board.layout, difficulty: board.difficulty,
     level: settings.difficulty, photos, history: [], elapsed: 0, hints: 0, shuffles: 0,
-    mode: settings.mode, matching: settings.matching, recorded: false, started: Date.now() };
+    mode: settings.mode, matching: settings.matching, recorded: false, started: Date.now(),initialSolution:board.solution.map(pair=>[...pair]) };
+  if(settings.mode==='race')game.race={interval:settings.raceInterval||15,nextAt:settings.raceInterval||15,waves:0,ended:false};
   return game;
 }
 export function shuffle(items, random = Math.random) {
@@ -65,24 +69,39 @@ export function reshuffle(game, random = Math.random) {
   }
   return false;
 }
-export const score = game => Math.max(0, game.tiles.filter(t => t.removed).length * 50 - game.hints * 15 - game.shuffles * 100);
+export const score = game => Math.max(0, game.tiles.filter(t => t.removed).length * 50 + (game.race?.waves||0)*100 - game.hints * 15 - game.shuffles * 100);
+export const betterResult=(game,best)=>!best||(game.mode==='race'
+  ? game.elapsed<best.elapsed||game.elapsed===best.elapsed&&score(game)>best.score
+  : score(game)>best.score||score(game)===best.score&&game.elapsed<best.elapsed);
 export function validState(state) {
   if (!state || state.version !== 2 || !state.game || !state.settings || !state.stats) return false;
   const g = state.game,s=state.settings,stats=state.stats;
   if(!['Random','Terrace','Diamond','Butterfly','Random terraces'].includes(s.layout)
-    || ![1,2,3].includes(s.difficulty) || !['','blue','plum','sand'].includes(s.theme)
+    || ![1,2,3].includes(s.difficulty) || !['','blue','plum','sand','custom'].includes(s.theme)
+    || s.backgroundColor!==undefined&&!validColor(s.backgroundColor)
+    || s.theme==='custom'&&!validColor(s.backgroundColor)
+    || s.tileColor!==undefined&&!tileColors.some(([id])=>id===s.tileColor)
+    || s.musicTrack!==undefined&&!musicChoices.some(([id])=>id===s.musicTrack)
+    || s.textSize!==undefined&&!['standard','comfortable','large'].includes(s.textSize)
+    || s.playerName!==undefined&&(typeof s.playerName!=='string'||s.playerName.length>40)
+    || stats.highScores!==undefined&&(!Array.isArray(stats.highScores)||stats.highScores.length>1000||!stats.highScores.every(validScore))
     || !['mixed','photos','traditional'].includes(s.collection) || !['identical','subject'].includes(s.matching)
-    || !['relaxed','challenge'].includes(s.mode) || !Number.isFinite(s.volume) || s.volume<0 || s.volume>1
+    || !['relaxed','challenge','race'].includes(s.mode) || s.raceInterval!==undefined&&!validRaceInterval(s.raceInterval)
+    || !Number.isFinite(s.volume) || s.volume<0 || s.volume>1
     || !['played','won','matches'].every(k=>Number.isInteger(stats[k]) && stats[k]>=0)
     || !Array.isArray(stats.achievements) || stats.achievements.some(a=>typeof a!=='string')
     || !stats.best || typeof stats.best!=='object')return false;
   if (!Array.isArray(g.tiles) || g.tiles.length < 2 || g.tiles.length > 300 || g.tiles.length % 2
-    || !Array.isArray(g.photos) || g.photos.length > 10 || !Array.isArray(g.history) || g.history.length>1000
+    || !Array.isArray(g.photos) || g.photos.length > 10 || !Array.isArray(g.history) || g.history.length>(g.mode==='race'?20000:1000)
     || !Number.isFinite(g.elapsed) || g.elapsed < 0) return false;
   if(!['Relaxed','Balanced','Challenging'].includes(g.difficulty) || ![1,2,3].includes(g.level)
-    || !['relaxed','challenge'].includes(g.mode) || !['identical','subject'].includes(g.matching)
+    || !['relaxed','challenge','race'].includes(g.mode) || !['identical','subject'].includes(g.matching)
     || !Number.isInteger(g.hints) || g.hints<0 || !Number.isInteger(g.shuffles) || g.shuffles<0
     || typeof g.recorded!=='boolean')return false;
+  if(g.mode==='race'&&(!g.race||!validRaceInterval(g.race.interval)||!Number.isInteger(g.race.waves)||g.race.waves<0
+    || g.race.nextAt!==(g.race.waves+1)*g.race.interval||typeof g.race.ended!=='boolean'
+    || g.race.waves!==g.history.filter(h=>h.type==='arrival').length||g.recorded&&g.race.ended))return false;
+  if(g.mode!=='race'&&g.race!==undefined)return false;
   if(g.photos.some(p=>typeof p.name!=='string' || !Array.isArray(p.variants) || !p.variants.length
     || p.variants.some(v=>typeof v.src!=='string' || !/^(myjong:\/\/(app\/photo\/|photo\/)|\.\/Photos\/|data:image\/)/.test(v.src))))return false;
   const ids = new Set();
@@ -100,6 +119,16 @@ export function validState(state) {
       const [a,b]=entry.ids.map(id=>rewind.find(t=>t.id===id));
       if(!a?.removed || !b?.removed || a.face!==b.face)return false;
       a.removed=b.removed=false;
+    } else if(entry.type==='arrival') {
+      if(g.mode!=='race'||!Array.isArray(entry.tiles)||entry.tiles.length!==2||entry.tiles[0].id===entry.tiles[1].id)return false;
+      const current=entry.tiles.map(t=>rewind.find(c=>c.id===t.id));
+      if(current.some(t=>!t||t.removed)||current[0].face!==current[1].face)return false;
+      for(const before of entry.tiles){
+        const tile=rewind.find(t=>t.id===before.id);
+        if(before.removed!==true||before.x!==tile.x||before.y!==tile.y||before.z!==tile.z
+          ||!Number.isInteger(before.face)||before.face<0||before.face>43||before.face<10&&!g.photos[before.face])return false;
+        Object.assign(tile,before);
+      }
     } else if(entry.type==='shuffle') {
       if(!Array.isArray(entry.tiles) || entry.tiles.length!==g.tiles.length)return false;
       const seen=new Set();

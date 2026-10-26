@@ -15,7 +15,12 @@ Download the Windows installer from [Releases](https://github.com/spasmodic1/MYj
 - Match identical photos or different photos of the same named person or pet.
 - Automatic save/resume, unlimited undo, cycling hints, and an undoable shuffle that seeks a solvable arrangement for the remaining stacks.
 - Relaxed play or Challenge play with timer, scoring, personal bests, and small achievements. The timer pauses while a dialog is open, the game is paused, or its window is hidden.
-- Four backgrounds, two tile finishes, optional captions and blocked-tile dimming, synthesized matching sounds, and an original optional melody.
+- Race the Clock adds a matching pair to cleared positions every 5–120 seconds. New pairs are immediately removable. Clear the board to win; no safe space for the next pair ends the race. Pausing, dialogs, and hiding the game pause arrivals. Undo covers player moves since the latest arrival.
+- Automatic no-moves popup, with background analysis of the move history and rollback before the first losing move when proven. If exact analysis reaches its limit, a verified solvable earlier position is offered instead, without claiming it is the first losing move.
+- Local high scores with name entry and the last saved name prefilled. Categories distinguish play style, difficulty, layout, starting board size, and race interval. Challenge ranks score before time; Race ranks fastest clear before score. Up to 1,000 named results are retained, with the top 20 in each category shown.
+- An original jade, ivory, and gold logo and Windows icon, illustrated botanical board frame, and styled menus. Comfortable text is the larger default; Standard and Large options are available.
+- Scrollbars stay hidden; wheel, touch and keyboard scrolling remain available. A clickable More indicator appears when there is more content to see.
+- Four preset backgrounds plus a custom background color picker; two tile finishes plus jade, blue, pink, and lavender tile colors; optional captions and blocked-tile dimming; synthesized matching sounds and five original optional background tunes. Choices persist between sessions.
 - Modern porcelain tiles with large photo/symbol windows, compact controls, matched-pair effects, and Fit/+/− board zoom; motion effects respect the system's reduced-motion preference. See [visual reference notes](./DESIGN-NOTES.md).
 - Folder and file importing; JPEG, PNG, WebP, AVIF and HEIC/HEIF conversion; phone uploads over home Wi-Fi through a QR code.
 - Editable names, inclusion controls, reassignment, merging, independent copies/crops of group photos, pan/zoom/reset controls, and a full-photo option.
@@ -35,7 +40,7 @@ Person suggestions use SSD MobileNet face detection and full 68-point landmarks.
 
 MYjong stores its photo library and saved game under `%APPDATA%\MYjong`, outside the installation folder. Updates and normal uninstalling keep that folder. Use **Settings → Create backup** to save a ZIP containing the collection and game, and **Restore backup** to move it to another computer.
 
-For phone uploads, connect both devices to the same private home Wi-Fi, open **Photo collection → Send from phone**, and scan the QR code. Leave that dialog open. Its link expires after 15 minutes and closes with the dialog. Windows may request firewall access for the private network. Public Wi-Fi, guest networks with device isolation, and corporate networks may prevent the connection. The transfer is direct local HTTP with a randomly generated session link; use a trusted home network. No cloud account is required. Device photo pickers determine how many photos can be selected together. Imports are limited to 40 MB per photo and 500 files per batch.
+For phone uploads, connect both devices to the same private home Wi-Fi, open **Photo collection → Send from phone**, and scan the QR code. Keep MYjong open while your photos finish sending. The QR dialog closes automatically when photos arrive, without interrupting the remaining selected photos. Manually closing a fresh QR dialog cancels that session. Its link expires after 15 minutes. Windows may request firewall access for the private network. Public Wi-Fi, guest networks with device isolation, and corporate networks may prevent the connection. The transfer is direct local HTTP with a randomly generated session link; use a trusted home network. No cloud account is required. Device photo pickers determine how many photos can be selected together. Imports are limited to 40 MB per photo and 500 files per batch.
 
 Recognition can miss faces, confuse people, or miss small/obscured animals. Review suggested names and framing, especially group photos. The pet detector includes cats, dogs, birds and horses. A separate bundled DINOv2 image model compares detected animals with confirmed pet photos; these appearance-based suggestions are tentative, particularly for pets of similar breeds or coloring. MYjong never applies a suggested name without confirmation. You can always assign names and frame photos manually. Crops use the actual 4:5 photo window inside the portrait tile, with the full photo retained separately.
 
@@ -57,6 +62,11 @@ npm run test:desktop     # Hidden Electron integration test
 npm run test:models      # Bundled model inference; rejects remote requests
 npm run test:imports     # Real pet-name prompt and manual framing preservation
 npm run test:collection  # Filters, naming, reopening and photo preservation
+npm run test:phone       # QR dismissal, multi-photo batch and manual cancellation
+npm run test:personalization # Color previews, music playback and saved preferences
+npm run test:race        # Arrivals, pause, reload, full-board loss and clear-board win
+npm run test:loss        # Automatic loss popup and exact first-losing-move rollback
+npm run test:scores      # Named records, persistence and last-used name
 npm run build            # Windows NSIS installer, blockmap and latest.yml
 ```
 

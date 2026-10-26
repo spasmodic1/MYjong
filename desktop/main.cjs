@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, dialog, protocol, net } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs/promises');
+const {randomUUID}=require('node:crypto');
 const { pathToFileURL } = require('node:url');
 const { Library, accepted } = require('./library.cjs');
 const { startPhone } = require('./phone.cjs');
@@ -113,7 +114,11 @@ app.whenReady().then(async () => {
     if (result.canceled) return null;
     return library.restore(result.filePaths[0]);
   });
-  handle('phone', async () => { phone?.close(); phone = await startPhone(library, ids => window.webContents.send('imported',ids)); return { url: phone.url, qr: phone.qr }; });
+  handle('phone', async () => {
+    phone?.close();const sessionId=randomUUID();
+    phone = await startPhone(library, ids => window.webContents.send('imported',ids,sessionId));
+    return { url: phone.url, qr: phone.qr, sessionId };
+  });
   handle('stop-phone', () => { phone?.close(); phone = null; });
   handle('update', async () => {
     let config;
@@ -137,6 +142,7 @@ app.whenReady().then(async () => {
     if (install.response === 0) autoUpdater.quitAndInstall();
     return 'Update downloaded. Use Check for Updates when you are ready to install.';
   });
+  if(process.env.MYJONG_SMOKE==='1')window.webContents.setAudioMuted(true);
   await window.loadURL('myjong://app/index.html');
 }).catch(error => { dialog.showErrorBox('MYjong could not start', error.message); app.quit(); });
 app.on('window-all-closed', () => { phone?.close(); app.quit(); });

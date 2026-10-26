@@ -7,5 +7,5 @@ test-results/
 playwright-report/
 *.log
 .npm-cache/
-Screenshots/
+/Screenshots/
 Private-Gift/

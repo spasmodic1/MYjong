@@ -1,0 +1,40 @@
+const {test}=require('node:test'),assert=require('node:assert/strict');
+const fs=require('node:fs/promises'),path=require('node:path'),os=require('node:os');
+const {_electron:electron}=require('@playwright/test');
+const root=path.resolve(__dirname,'..');
+test('race arrivals pause, survive reload, end on a full board and allow a clear-board win',{timeout:180000},async t=>{
+  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'myjong-race-'));
+  const app=await electron.launch({...process.env.MYJONG_TEST_PACKAGE==='1'?{executablePath:path.join(root,'dist/win-unpacked/MYjong.exe'),args:[]}:{args:[root]},env:{...process.env,MYJONG_TEST_DATA:dir,MYJONG_SMOKE:'1'}});
+  t.after(async()=>{await app.close();await fs.rm(dir,{recursive:true,force:true});});
+  const page=await app.firstWindow();page.setDefaultTimeout(15000);await page.waitForSelector('.tile');
+  page.on('pageerror',error=>console.log('Race renderer error:',error.message));
+  const visible=()=>page.evaluate(()=>Object.defineProperty(document,'hidden',{get:()=>false,configurable:true}));await visible();
+  await page.locator('#new').click();await page.locator('#mode').selectOption('race');assert.equal(await page.locator('#race-options').isVisible(),true);
+  await page.locator('#raceInterval').fill('10');await page.locator('#collection').selectOption('traditional');await page.locator('#layout').selectOption('Terrace');await page.locator('#difficulty').selectOption('1');
+  await page.getByRole('button',{name:'Start puzzle',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('#new-dialog').open);
+  await page.waitForFunction(async()=> (await window.myjong.load()).state.game.mode==='race');
+  const initial=await page.locator('.tile').count();
+  await page.locator('#hint').click();let ids=await page.locator('.tile.hint').evaluateAll(tiles=>tiles.map(t=>t.dataset.id));
+  for(const id of ids)await page.locator(`.tile[data-id="${id}"]`).click();
+  await page.locator('#pause').click();const paused=await page.evaluate(()=>window.myjong.load());
+  await page.waitForTimeout(5500);let loaded=await page.evaluate(()=>window.myjong.load());
+  assert.equal(loaded.state.game.race.waves,0);assert.equal(loaded.state.game.elapsed,paused.state.game.elapsed);
+  await page.locator('#resume').click();await page.waitForFunction(async()=> (await window.myjong.load()).state.game.race.waves===1);
+  await page.waitForFunction(count=>document.querySelectorAll('.tile').length===count,initial);assert.equal(await page.locator('#undo').isDisabled(),true);
+  loaded=await page.evaluate(()=>window.myjong.load());assert.equal(loaded.state.game.race.nextAt,20);
+  const screenshots=path.join(root,'Screenshots/0.9.3');await fs.mkdir(screenshots,{recursive:true});await page.screenshot({path:path.join(screenshots,'race-the-clock.png')});
+  await page.locator('#settings').click();await page.waitForTimeout(5500);
+  loaded=await page.evaluate(()=>window.myjong.load());assert.equal(loaded.state.game.race.ended,false);assert.equal(loaded.state.game.race.waves,1);
+  await page.reload();await page.waitForSelector('.tile');await visible();
+  loaded=await page.evaluate(()=>window.myjong.load());assert.equal(loaded.recovered,false);assert.equal(loaded.state.game.race.waves,1);
+  await page.waitForSelector('#race-over-dialog[open]');assert.equal(await page.locator('#hint').isDisabled(),true);
+  await page.locator('#race-over-new').click();await page.locator('#raceInterval').fill('120');
+  await page.getByRole('button',{name:'Start puzzle',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('#new-dialog').open);
+  while(await page.locator('.tile').count()){
+    await page.locator('#hint').click();ids=await page.locator('.tile.hint').evaluateAll(tiles=>tiles.map(t=>t.dataset.id));assert.equal(ids.length,2);
+    for(const id of ids)await page.locator(`.tile[data-id="${id}"]`).click();
+  }
+  await page.waitForSelector('#win-dialog[open]');loaded=await page.evaluate(()=>window.myjong.load());
+  assert.equal(loaded.state.game.recorded,true);assert.ok(loaded.state.stats.achievements.includes('Beat the clock'));
+  assert.ok(Object.keys(loaded.state.stats.best).some(key=>key.startsWith('Race 120s')));
+});

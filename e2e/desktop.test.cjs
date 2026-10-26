@@ -89,7 +89,7 @@ test('Windows app: library, crops, matching, persistence, settings, phone upload
   localURL.pathname='/upload'; localURL.searchParams.set('name','phone.jpg');
   assert.equal((await fetch(localURL,{method:'POST',body:other})).status,200);
   await page.waitForFunction(()=>document.querySelectorAll('.photo-card').length===2);
-  await page.locator('#phone-dialog [data-close]').click();
+  await page.waitForFunction(()=>!document.querySelector('#phone-dialog').open);
   await page.locator('#library-dialog [data-close]').click();
   await page.locator('#new').click(); await page.locator('#difficulty').selectOption('3');
   await page.locator('#collection').selectOption('traditional'); await page.locator('#mode').selectOption('challenge');

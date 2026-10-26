@@ -25,6 +25,11 @@ jobs:
       - run: npm run test:models
       - run: npm run test:imports
       - run: npm run test:collection
+      - run: npm run test:phone
+      - run: npm run test:personalization
+      - run: npm run test:race
+      - run: npm run test:loss
+      - run: npm run test:scores
       - name: Check for an existing published release
         id: existing
         if: startsWith(github.ref, 'refs/tags/v')

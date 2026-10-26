@@ -1,0 +1,26 @@
+const {test}=require('node:test'),assert=require('node:assert/strict');
+const fs=require('node:fs/promises'),path=require('node:path'),os=require('node:os');
+const {_electron:electron}=require('@playwright/test');
+const root=path.resolve(__dirname,'..');
+test('no legal moves opens recovery and rolls back before the first losing move',{timeout:60000},async t=>{
+  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'myjong-loss-'));
+  const {makeGame,defaults,emptyStats,validState}=await import('../src/game.js');
+  const settings={...defaults,mode:'challenge'},game=makeGame(settings,{photos:[],subjects:[]});
+  game.tiles=[{id:0,x:0,y:0,z:0,face:10,removed:false},{id:1,x:0,y:0,z:1,face:10,removed:false},{id:2,x:2,y:0,z:0,face:10,removed:false},{id:3,x:4,y:0,z:0,face:10,removed:false},{id:4,x:6,y:0,z:0,face:11,removed:false},{id:5,x:7,y:0,z:0,face:11,removed:false}];
+  game.initialSolution=[[4,5],[1,2],[0,3]];
+  const state={version:2,settings,stats:emptyStats(),game};assert.equal(validState(state),true);
+  await fs.writeFile(path.join(dir,'state.json'),JSON.stringify(state));
+  await fs.writeFile(path.join(dir,'library.json'),JSON.stringify({version:1,subjects:[],photos:[]}));
+  const app=await electron.launch({...process.env.MYJONG_TEST_PACKAGE==='1'?{executablePath:path.join(root,'dist/win-unpacked/MYjong.exe'),args:[]}:{args:[root]},env:{...process.env,MYJONG_TEST_DATA:dir,MYJONG_SMOKE:'1'}});
+  t.after(async()=>{await app.close();await fs.rm(dir,{recursive:true,force:true});});
+  const page=await app.firstWindow();page.setDefaultTimeout(15000);await page.waitForSelector('.tile');
+  for(const id of [4,5,2,3])await page.locator(`.tile[data-id="${id}"]`).click();
+  await page.waitForSelector('#loss-dialog[open]');await page.waitForFunction(()=>!document.querySelector('#loss-rollback').disabled);
+  assert.equal(await page.locator('#loss-rollback').textContent(),'Roll back before move 2');
+  await fs.mkdir(path.join(root,'Screenshots/0.9.3'),{recursive:true});await page.screenshot({path:path.join(root,'Screenshots/0.9.3/loss-rollback.png')});
+  await page.locator('#loss-rollback').click();await page.waitForFunction(()=>!document.querySelector('#loss-dialog').open);
+  assert.equal(await page.locator('.tile').count(),4);assert.equal(await page.locator('.tile[data-id="4"]').count(),0);
+  let loaded=await page.evaluate(()=>window.myjong.load());assert.equal(loaded.state.game.history.length,1);assert.equal(validState(loaded.state),true);
+  for(const id of [1,2,0,3])await page.locator(`.tile[data-id="${id}"]`).click();
+  await page.waitForSelector('#win-dialog[open]');
+});

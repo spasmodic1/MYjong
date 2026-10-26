@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { makeGame, defaults, reshuffle, validState, emptyStats } from './game.js';
+import { makeGame, defaults, reshuffle, validState, emptyStats, betterResult, score } from './game.js';
 import { pairs, isFree } from './rules.js';
 const library = { subjects: [{ id:'a', name:'Cat', included:true },{ id:'b', name:'Dog', included:false }], photos: [
   { id:'1',subjectId:'a',included:true,src:'./Photos/a.jpg' },{ id:'2',subjectId:'a',included:true,src:'./Photos/b.jpg' },
@@ -42,4 +42,20 @@ test('saved games reject invalid tile identities and coordinates', () => {
   const state = { version:2, settings:{...defaults}, stats:emptyStats(),game:makeGame(defaults,library) };
   assert.equal(validState(state),true);
   state.game.tiles[0].x=NaN; assert.equal(validState(state),false);
+});
+test('custom appearance saves validate while older settings remain compatible',()=>{
+  const state={version:2,settings:{...defaults,theme:'custom',backgroundColor:'#f1e2ca',tileColor:'lavender',musicTrack:'starlight'},stats:emptyStats(),game:makeGame(defaults,library)};
+  assert.equal(validState(state),true);
+  state.settings.backgroundColor='url(invalid)';assert.equal(validState(state),false);
+  state.settings.backgroundColor='#ffffff';state.settings.musicTrack='invalid';assert.equal(validState(state),false);
+  state.settings.musicTrack='garden';state.settings.tileColor='invalid';assert.equal(validState(state),false);
+  state.settings.theme='';for(const key of ['musicTrack','tileColor','backgroundColor'])delete state.settings[key];
+  assert.equal(validState(state),true,'pre-personalization saves remain valid');
+});
+test('challenge ranks points, while race ranks speed so extra arrivals cannot farm records',()=>{
+  const g=makeGame({...defaults,mode:'challenge'},library);g.tiles[0].removed=g.tiles[1].removed=true;g.elapsed=20;
+  assert.equal(betterResult(g,{score:score(g),elapsed:25}),true);
+  assert.equal(betterResult(g,{score:score(g)+1,elapsed:25}),false);
+  g.mode='race';assert.equal(betterResult(g,{score:score(g)+1000,elapsed:25}),true);
+  assert.equal(betterResult(g,{score:0,elapsed:10}),false);
 });

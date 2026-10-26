@@ -12,3 +12,9 @@ This review covers mahjong **solitaire**, the pair-matching genre MYjong impleme
 MYjong adopts the shared usability patterns with original implementation: cleaner porcelain by default, larger artwork/photo windows, readable photo names, stronger selection/hint feedback, short matched-pair animations, compact controls, subtle original background lighting, and Fit/+/− zoom controls. Ivory remains available. Reduced-motion preferences disable tile effects. The photo window retains its 4:5 ratio, so crop coordinates remain valid.
 
 Competitor screenshots are research references only; their artwork, logos, tile designs, and branded content are not included in MYjong. Personal photos, offline play, unrestricted hints/undo, and the calm tone remain MYjong's focus.
+
+## Original illustrated identity
+
+Version 0.9.3 adds original generated jade, ivory and gold branding: an interwoven M emblem, MYjong wordmark and transparent botanical frame. Artwork stays around the playing surface while tile photos and traditional marks remain clear. Masters and the exact generation prompts are in [assets/branding](./assets/branding/PROMPTS.md); `tools/prepare-branding.cjs` exports WebP and Windows icon sizes. No personal photos were used for generation.
+
+Comfortable text is 15% larger than the Standard scale, with a further Large option and roomier sidebar. Arbitrary custom backgrounds choose black or white board text by contrast. Motion preferences are respected. Race mode limits undo at arrival boundaries; the relaxed and challenge modes retain their existing undo behavior.

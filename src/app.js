@@ -1,5 +1,5 @@
 import { isFree, pairs } from './rules.js';
-import { makeGame, defaults, emptyStats, photoUrl, reshuffle, score, validState } from './game.js';
+import { makeGame, defaults, emptyStats, photoUrl, reshuffle, score, validState, betterResult } from './game.js';
 import { createHintCycle } from './hints.js';
 import { standardArt, standardName } from './standard-tiles.js';
 import { createAudio } from './audio.js';
@@ -7,11 +7,17 @@ import { browserAPI } from './browser-api.js';
 import { readSave } from './storage.js';
 import { suggestedCrop, groupDetections } from './photo-analysis.js';
 import {setupImportReview} from './import-review.js';
+import {musicChoices,tileColors,backgroundInk} from './personalization.js';
+import {advanceRace,raceFinished} from './race.js';
+import {cleanPlayerName,scoreCategory,rankScores} from './scoreboard.js';
+import {setupScrollHints} from './scroll-hints.js';
 
 const $ = id => document.getElementById(id);
 let api, library = { photos: [], subjects: [] }, state, selected = null, highlighted = [], paused = false;
 let activeSubject = null, activeCrop = null, saveTimer, lastTick = performance.now(), saveChain = Promise.resolve();
 let importReview;
+let arriving=[];
+let lossSignature=null,lossWorker=null,rollbackPlan=null;
 const nextHint = createHintCycle();
 const audio = createAudio(() => state.settings);
 const time = seconds => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
@@ -43,6 +49,12 @@ function save(immediate = false) {
 function appearance() {
   const s = state.settings;
   document.body.className = [s.theme, s.tileStyle === 'porcelain' ? 'porcelain' : '', s.available ? '' : 'no-dim', s.captions ? '' : 'no-captions'].join(' ');
+  document.body.dataset.tileColor=s.tileColor;
+  document.body.dataset.textSize=s.textSize;
+  document.body.style.setProperty('--custom-background',s.backgroundColor);
+  document.body.style.setProperty('--board-ink',backgroundInk(s.backgroundColor));
+  $('custom-background').hidden=s.theme!=='custom';
+  $('background-color-value').textContent=s.backgroundColor.toUpperCase();
 }
 function sizeBoard() {
   if (!state) return;
@@ -68,16 +80,24 @@ function updateCounters() {
   const g = game(), remaining = g.tiles.filter(t => !t.removed).length, moves = pairs(g.tiles).length;
   $('remaining').textContent = remaining; $('layout-name').textContent = g.layout;
   $('difficulty-label').textContent = g.difficulty;
-  $('mode-label').textContent = g.mode === 'challenge' ? 'Timed play' : 'No timer';
-  $('clock').hidden = $('score').hidden = g.mode !== 'challenge';
+  $('mode-label').textContent = g.mode === 'race' ? 'Race the Clock' : g.mode === 'challenge' ? 'Timed play' : 'No timer';
+  $('clock').hidden = $('score').hidden = g.mode === 'relaxed';
+  $('race-countdown').hidden=g.mode!=='race';
+  if(g.mode==='race'){
+    const seconds=Math.max(0,Math.ceil(g.race.nextAt-g.elapsed));
+    $('race-countdown').textContent=raceFinished(g)?'Race ended':g.recorded?'Board cleared':`Next pair in ${seconds}s`;
+    $('race-countdown').classList.toggle('race-urgent',!raceFinished(g)&&!g.recorded&&seconds<=5);
+  }
   $('clock').textContent = time(g.elapsed); $('score').textContent = `${score(g)} points`;
   $('pair-count').textContent = `${moves} available ${moves === 1 ? 'pair' : 'pairs'}`;
   $('progress-fill').style.width = `${(1 - remaining / g.tiles.length) * 100}%`;
   const hasPhotos = g.tiles.some(t => t.face < 10);
   $('collection-note').textContent = hasPhotos ? (g.tiles.some(t => t.face >= 10) ? 'Your memories & a little tradition' : 'A collection of familiar faces') : 'The traditional collection';
   $('matching-note').textContent = hasPhotos ? (g.matching === 'subject' ? 'Match the same person or pet, even in different photos.' : 'Match identical photos and traditional symbols.') : 'Match identical traditional symbols.';
-  $('undo').disabled = !g.history.length || g.recorded;
-  $('hint').disabled = $('shuffle').disabled = remaining === 0;
+  $('undo').disabled = !g.history.length || g.history.at(-1)?.type==='arrival' || g.recorded || raceFinished(g);
+  $('undo').title=g.mode==='race'?'Undo moves since the latest incoming pair (Ctrl+Z)':'Undo (Ctrl+Z)';
+  $('hint').disabled = $('shuffle').disabled = remaining === 0 || raceFinished(g);
+  $('show-loss-options').hidden=remaining===0||moves>0||raceFinished(g);
   return { remaining, moves };
 }
 function render(message = '') {
@@ -85,7 +105,7 @@ function render(message = '') {
   const board = $('board'); board.replaceChildren();
   for (const tile of game().tiles.filter(t => !t.removed).sort((a,b) => a.z - b.z || a.y - b.y)) {
     const free = isFree(tile, game().tiles), button = document.createElement('button');
-    button.className = `tile${free ? '' : ' blocked'}${selected === tile.id ? ' selected' : ''}${highlighted.includes(tile.id) ? ' hint' : ''}`;
+    button.className = `tile${free ? '' : ' blocked'}${selected === tile.id ? ' selected' : ''}${highlighted.includes(tile.id) ? ' hint' : ''}${arriving.includes(tile.id)?' race-arrival':''}`;
     button.dataset.id = tile.id; button.dataset.suit = tile.face % 3;
     button.style.zIndex = tile.z * 10 + 1;
     button.setAttribute('aria-label', `${tileName(tile)}, ${free ? 'available' : 'blocked'}, row ${tile.y + 1}, column ${tile.x + 1}, layer ${tile.z + 1}`);
@@ -103,12 +123,52 @@ function render(message = '') {
   }
   sizeBoard();
   const { remaining, moves } = updateCounters();
-  setMessage(message || (remaining === 0 ? 'A lovely little victory. Your board is clear.' : moves === 0 ? 'No open matches right now. Try Undo or Shuffle.' : 'Choose two free tiles with matching faces.'));
+  arriving=[];
+  setMessage(message || (raceFinished(game())?'No room for the next pair. Start a new race to try again.':remaining === 0 ? 'A lovely little victory. Your board is clear.' : moves === 0 ? 'No open matches right now. Try Undo or Shuffle.' : 'Choose two free tiles with matching faces.'));
   if (focused) (board.querySelector(`[data-id="${focused}"]`) || board.querySelector('.tile:not(.blocked)'))?.focus({ preventScroll: true });
   save();
+  if(moves>0||remaining===0){lossSignature=null;rollbackPlan=null;lossWorker?.terminate();lossWorker=null;}
+  else offerLossRecovery();
+}
+const boardSignature=()=>game().tiles.map(t=>`${t.id}:${t.face}:${t.removed}`).join('|');
+function offerLossRecovery(force=false){
+  const g=game();
+  if(g.recorded||raceFinished(g)||!g.tiles.some(t=>!t.removed)||pairs(g.tiles).length||document.querySelector('dialog[open]'))return;
+  const signature=boardSignature();if(!force&&signature===lossSignature)return;
+  lossSignature=signature;rollbackPlan=null;
+  $('loss-description').textContent='There are no matching free pairs left. Checking which move first closed the path to a clear board…';
+  $('loss-rollback').disabled=true;$('loss-rollback').textContent='Checking earlier moves…';show('loss-dialog');
+  lossWorker?.terminate();
+  const finished=plan=>{
+    lossWorker?.terminate();lossWorker=null;
+    if(signature!==boardSignature()||!$('loss-dialog').open)return;
+    rollbackPlan=plan;
+    $('loss-rollback').disabled=!plan;
+    $('loss-rollback').textContent=plan?(plan.exact?`Roll back before move ${plan.move}`:'Return to a solvable position'):'No verified rollback found';
+    $('loss-description').textContent=plan?(plan.exact?`Move ${plan.move} was the first move that made this stretch of play unsolvable. You can return to just before it and try a different pair.`:'A solvable earlier position was verified. The exact first losing move could not be proven within the search limit. You can return to that safe point.'):'No legal moves remain. A safe rollback could not be verified quickly; you can still shuffle or start another puzzle.';
+  };
+  try{
+    lossWorker=new Worker(new URL('./loss-worker.js',import.meta.url),{type:'module'});
+    lossWorker.onmessage=event=>finished(event.data.plan);lossWorker.onerror=()=>finished(null);
+    lossWorker.postMessage({tiles:g.tiles,history:g.history,initialSolution:g.initialSolution});
+  }catch{finished(null);}
+}
+function rollbackLoss(){
+  const plan=rollbackPlan,g=game();if(!plan||boardSignature()!==lossSignature)return;
+  const before=g.history[plan.rollbackAt];
+  g.tiles=structuredClone(plan.tiles);g.history=g.history.slice(0,plan.rollbackAt);
+  if(before?.elapsed!==undefined)g.elapsed=before.elapsed;
+  if(before?.hints!==undefined)g.hints=before.hints;
+  if(before?.shuffles!==undefined)g.shuffles=before.shuffles;
+  if(g.mode==='race'){
+    g.race.waves=g.history.filter(e=>e.type==='arrival').length;g.race.nextAt=(g.race.waves+1)*g.race.interval;g.race.ended=false;
+    if(before?.elapsed===undefined)g.elapsed=g.race.waves*g.race.interval;
+  }
+  selected=null;highlighted=[];lossSignature=null;close('loss-dialog');lastTick=performance.now();
+  render(plan.exact?`Back before move ${plan.move}. Try a different pair.`:'Returned to a verified solvable position.');save(true);
 }
 function choose(tile) {
-  if (paused) return;
+  if (paused||raceFinished(game())) return;
   if (!isFree(tile, game().tiles)) { audio.play('blocked'); setMessage('This tile needs space: uncover it and open its left or right side.'); return; }
   highlighted = [];
   if (selected === tile.id) { selected = null; render(); return; }
@@ -116,7 +176,7 @@ function choose(tile) {
   if (previous && previous.face === tile.face) {
     matchEffect([previous.id,tile.id]);
     previous.removed = tile.removed = true;
-    game().history.push({ type: 'match', ids: [previous.id, tile.id] });
+    game().history.push({ type: 'match', ids: [previous.id, tile.id],elapsed:game().elapsed,hints:game().hints,shuffles:game().shuffles });
     selected = null; state.stats.matches++; audio.play('match'); render('A little more room. Nicely matched.');
     if (game().tiles.every(t => t.removed)) win();
   } else { selected = tile.id; audio.play('select'); render(previous ? 'Those faces are different. Find a partner for this tile.' : 'Now find its matching face.'); }
@@ -135,13 +195,13 @@ function matchEffect(ids) {
   }
 }
 function hint() {
-  if (game().tiles.every(t => t.removed)) return;
+  if (raceFinished(game())||game().tiles.every(t => t.removed)) return;
   selected = null; highlighted = nextHint(game().tiles).map(t => t.id);
   if (highlighted.length) game().hints++;
   render(highlighted.length ? 'A pair for you. Press Hint again to see another.' : 'No open pairs. Try Undo or Shuffle.');
 }
 function undo() {
-  if (game().recorded) return;
+  if (game().recorded||raceFinished(game())||game().history.at(-1)?.type==='arrival') return;
   const last = game().history.pop(); if (!last) return;
   if (last.type === 'match') last.ids.forEach(id => { game().tiles.find(t => t.id === id).removed = false; });
   else if (last.type === 'shuffle') game().tiles = last.tiles;
@@ -154,24 +214,62 @@ function win() {
   unlock('First little victory'); if (!g.hints) unlock('A keen eye'); if (g.level === 3) unlock('A mountain made small');
   if (state.stats.won >= 10) unlock('Ten moments of calm');
   if (g.photos.length) unlock('Familiar faces');
-  const key = `${g.difficulty} · ${g.layout}`;
-  if (g.mode === 'challenge') {
+  if(g.mode==='race')unlock('Beat the clock');
+  const category=`${g.difficulty} · ${g.layout} · ${g.tiles.length/2} starting pairs`;
+  const key = g.mode==='race'?`Race ${g.race.interval}s · ${category}`:category;
+  if (g.mode !== 'relaxed') {
     const best = state.stats.best[key];
-    if (!best || score(g) > best.score || score(g) === best.score && g.elapsed < best.elapsed) state.stats.best[key] = { score: score(g), elapsed: g.elapsed };
+    if (betterResult(g,best)) state.stats.best[key] = { score: score(g), elapsed: g.elapsed };
   }
-  $('win-details').textContent = g.mode === 'challenge' ? `${time(g.elapsed)} · ${score(g)} points · ${g.hints} hints` : `${g.tiles.length / 2} pairs found. A moment well spent.`;
-  updateCounters(); save(true); audio.play('win'); show('win-dialog');
+  $('win-details').textContent = g.mode !== 'relaxed' ? `${time(g.elapsed)} · ${score(g)} points · ${g.hints} hints` : `${g.tiles.length / 2} pairs found. A moment well spent.`;
+  prepareScoreEntry();updateCounters(); save(true); audio.play('win'); show('win-dialog');
+}
+function prepareScoreEntry(){
+  const saved=Boolean(game().scoreSaved);
+  $('score-name').value=state.settings.playerName||'';$('score-name').disabled=saved;
+  $('save-score').disabled=saved;$('save-score').textContent=saved?'Score saved':'Save to high scores';
+  $('score-saved').textContent=saved?'This game is already on your local scoreboard.':`${score(game())} points · ${time(game().elapsed)}. Enter a name to keep this result.`;
+}
+function saveNamedScore(){
+  if(!game().recorded||game().scoreSaved)return;
+  const name=cleanPlayerName($('score-name').value);
+  if(!name){$('score-saved').textContent='Enter a name for your score.';$('score-name').focus();return;}
+  const entry={id:crypto.randomUUID(),name,category:scoreCategory(game()),mode:game().mode,score:score(game()),elapsed:game().elapsed,created:Date.now()};
+  state.stats.highScores=[...(state.stats.highScores||[]),entry].slice(-1000);
+  state.settings.playerName=name;game().scoreSaved=entry.id;prepareScoreEntry();save(true);
+}
+function renderScores(){
+  const category=$('score-category').value,rows=rankScores(state.stats.highScores||[],category).slice(0,20),list=$('scoreboard-list');list.replaceChildren();
+  $('scoreboard-rule').textContent=category.startsWith('Race ')?'Fastest clear wins; points break ties.':'Most points wins; faster time breaks ties.';
+  if(!rows.length){const p=document.createElement('p');p.className='muted';p.textContent='No scores in this category yet. Clear a board and save your name to start.';list.append(p);return;}
+  const table=document.createElement('table'),head=document.createElement('thead'),tr=document.createElement('tr');
+  for(const label of ['Rank','Name','Points','Time']){const th=document.createElement('th');th.scope='col';th.textContent=label;tr.append(th);}head.append(tr);table.append(head);
+  const body=document.createElement('tbody');rows.forEach((entry,index)=>{
+    const row=document.createElement('tr');if(entry.id===game().scoreSaved)row.className='latest-score';
+    for(const value of [index+1,entry.name,entry.score,time(entry.elapsed)]){const cell=document.createElement('td');cell.textContent=value;row.append(cell);}body.append(row);
+  });table.append(body);list.append(table);
+}
+function openScores(){
+  const current=scoreCategory(game()),categories=[current,...new Set((state.stats.highScores||[]).map(r=>r.category).filter(c=>c!==current))];
+  $('score-category').replaceChildren(...categories.map(category=>option(category,category)));$('score-category').value=current;
+  $('record-current-score').hidden=!game().recorded||Boolean(game().scoreSaved);renderScores();show('scoreboard-dialog');
 }
 function openNew() {
-  for (const key of ['layout','difficulty','collection','matching','mode']) $(key).value = state.settings[key];
+  for (const key of ['layout','difficulty','collection','matching','mode','raceInterval']) $(key).value = state.settings[key];
+  updateRaceOptions();
   $('new-warning').hidden = !game().history.length || game().recorded;
   show('new-dialog');
+}
+function updateRaceOptions(){
+  const mode=$('mode').value;$('race-options').hidden=mode!=='race';$('score-rules').hidden=mode==='relaxed';
+  $('score-rules').textContent='100 points per matched pair · Hint −15 · Shuffle −100. '+(mode==='race'?'Race records favor the fastest clear; points break ties.':'Challenge records favor points; faster time breaks ties.');
 }
 async function startNew(event) {
   event.preventDefault();
   const next = { ...state.settings };
   for (const key of ['layout','collection','matching','mode']) next[key] = $(key).value;
   next.difficulty = Number($('difficulty').value);
+  next.raceInterval=Number($('raceInterval').value);
   const g = makeGame(next, library);
   if (next.collection !== 'traditional' && !g.photos.length) {
     if (!await message('A traditional puzzle for now?', 'No named photos are included yet. You can add and name photos in your collection, or play with traditional tiles now.', true, 'Play traditional')) return;
@@ -180,7 +278,7 @@ async function startNew(event) {
   selected = null; highlighted = []; close('new-dialog'); lastTick = performance.now(); render('A fresh puzzle, just for you.'); save(true);
 }
 function openSettings() {
-  for (const key of ['theme','tileStyle','volume']) $(key).value = state.settings[key];
+  for (const key of ['theme','tileStyle','tileColor','textSize','backgroundColor','musicTrack','volume']) $(key).value = state.settings[key];
   for (const key of ['available','captions','sound','music']) $(key).checked = state.settings[key];
   $('settings-message').textContent = ''; show('settings-dialog');
 }
@@ -195,9 +293,9 @@ function openStats() {
   for (const name of state.stats.achievements.length ? state.stats.achievements : ['Your first celebration is waiting. Clear a board to begin.']) {
     const row = document.createElement('p'); row.className = 'achievement'; row.textContent = `✧ ${name}`; content.append(row);
   }
-  const best = document.createElement('h3'); best.textContent = 'Challenge personal bests'; content.append(best);
+  const best = document.createElement('h3'); best.textContent = 'Challenge & Race personal bests'; content.append(best);
   for (const [key, value] of Object.entries(state.stats.best)) { const row = document.createElement('p'); row.textContent = `${key}: ${value.score} points · ${time(value.elapsed)}`; content.append(row); }
-  if (!Object.keys(state.stats.best).length) { const p = document.createElement('p'); p.className = 'muted'; p.textContent = 'Try a Challenge puzzle to record a personal best.'; content.append(p); }
+  if (!Object.keys(state.stats.best).length) { const p = document.createElement('p'); p.className = 'muted'; p.textContent = 'Try a Challenge or Race the Clock puzzle to record a personal best.'; content.append(p); }
   show('stats-dialog');
 }
 
@@ -378,19 +476,32 @@ function bind() {
   document.querySelector('.board-heading').append(zoom);
   document.querySelectorAll('[data-close]').forEach(button => { button.onclick = () => button.closest('dialog').close(); });
   $('new').onclick = openNew; $('new-form').onsubmit = e => run(() => startNew(e));
+  $('show-loss-options').onclick=()=>offerLossRecovery(true);
+  $('loss-rollback').onclick=rollbackLoss;
+  $('loss-shuffle').onclick=()=>{close('loss-dialog');$('shuffle').click();};
+  $('loss-new').onclick=()=>{close('loss-dialog');openNew();};
+  $('loss-dialog').addEventListener('close',()=>{lossWorker?.terminate();lossWorker=null;});
+  $('mode').onchange=updateRaceOptions;
+  $('race-over-new').onclick=()=>{close('race-over-dialog');openNew();};
   $('undo').onclick = undo; $('hint').onclick = hint;
   $('shuffle').onclick = () => run(async () => {
+    if(raceFinished(game()))return;
     if (!await message('Give these tiles a fresh start?', 'Shuffle keeps your matched pairs and rearranges the remaining faces. It can be undone.', true, 'Shuffle')) return;
     const before = structuredClone(game().tiles);
     if (reshuffle(game())) { game().history.push({ type: 'shuffle', tiles: before }); game().shuffles++; selected = null; highlighted = []; render('A fresh arrangement. There’s a path through these tiles.'); }
     else await message('These stacks need an earlier move', 'Undo a few matches or start another puzzle. The remaining stack shape could not be paired into a solvable arrangement.');
   });
   $('settings').onclick = openSettings; $('help').onclick = () => show('help-dialog'); $('statistics').onclick = openStats;
+  $('high-scores').onclick=openScores;$('score-category').onchange=renderScores;$('save-score').onclick=saveNamedScore;
+  $('score-name').onkeydown=event=>{if(event.key==='Enter'){event.preventDefault();saveNamedScore();}};
+  $('record-current-score').onclick=()=>{close('scoreboard-dialog');prepareScoreEntry();$('win-details').textContent=`${score(game())} points · ${time(game().elapsed)}`;show('win-dialog');};
   $('photos').onclick = () => { $('subject-filter').value='all';renderLibrary();$('library-dialog').scrollTop=0;show('library-dialog');importReview.openPending(); };
   $('win-new').onclick = () => { close('win-dialog'); openNew(); };
-  for (const key of ['theme','tileStyle','available','captions','sound','music','volume']) $(key).oninput = () => {
+  $('musicTrack').replaceChildren(...musicChoices.map(([id,name])=>option(name,id)));
+  $('tileColor').replaceChildren(...tileColors.map(([id,name])=>option(name,id)));
+  for (const key of ['theme','tileStyle','tileColor','textSize','backgroundColor','musicTrack','available','captions','sound','music','volume']) $(key).oninput = () => {
     state.settings[key] = ['available','captions','sound','music'].includes(key) ? $(key).checked : key === 'volume' ? Number($(key).value) : $(key).value;
-    appearance(); audio.sync(); save();
+    appearance();sizeBoard(); audio.sync(); save();
   };
   $('backup').onclick = () => run(async () => { if (await api.backup()) $('settings-message').textContent = 'Backup saved. Keep a copy somewhere safe.'; });
   if (api.restore) {
@@ -416,12 +527,20 @@ function bind() {
   $('import-files').onclick = () => window.myjong ? run(() => importPhotos()) : $('file-picker').click();
   $('import-folder').onclick = () => window.myjong ? run(() => importPhotos(true)) : message('Folder discovery is in the Windows app', 'You can use Add photos in this browser preview.');
   $('file-picker').onchange = event => run(async () => { await importPhotos(false, [...event.target.files]); event.target.value = ''; });
+  let phoneSessionId=null;
   $('import-phone').onclick = () => run(async () => {
     if (!api.phone) { await message('Phone importing is in the Windows app', 'The installed app can receive photos from your phone over home Wi-Fi.'); return; }
-    const result = await api.phone(); $('phone-qr').src = result.qr; $('phone-url').textContent = result.url; show('phone-dialog');
+    const result = await api.phone();phoneSessionId=result.sessionId; $('phone-qr').src = result.qr; $('phone-url').textContent = result.url; show('phone-dialog');
   });
-  $('phone-dialog').addEventListener('close', () => {api.stopPhone?.();importReview.openPending();});
-  api.onImport?.(async ids => { library = await api.library(); renderLibrary(); $('library-message').textContent = 'Photos received from your phone. Looking for familiar faces…';importReview.enqueue(ids||[]); });
+  const cancelPhoneUpload=()=>{phoneSessionId=null;api.stopPhone?.();};
+  $('phone-dialog').querySelector('[data-close]').onclick=()=>{cancelPhoneUpload();close('phone-dialog');};
+  $('phone-dialog').addEventListener('cancel',cancelPhoneUpload);
+  $('phone-dialog').addEventListener('close',()=>importReview.openPending());
+  api.onImport?.(async (ids,sessionId) => {
+    library = await api.library(); renderLibrary(); $('library-message').textContent = 'Photos received from your phone. Looking for familiar faces…';importReview.enqueue(ids||[]);
+    // Keep the selected batch transferring; an older batch cannot dismiss a new QR.
+    if(sessionId===phoneSessionId&&$('phone-dialog').open)close('phone-dialog');
+  });
   for (const key of ['crop-x','crop-y','crop-zoom']) $(key).oninput = drawCrop;
   $('crop-reset').onclick = () => { $('crop-x').value = $('crop-y').value = .5; $('crop-zoom').value = 1; drawCrop(); };
   $('crop-save').onclick = () => run(() => applyCrop(cropValues())); $('crop-full').onclick = () => run(() => applyCrop(null));
@@ -440,11 +559,23 @@ function bind() {
   new ResizeObserver(sizeBoard).observe($('board-space'));
   setInterval(() => {
     const now = performance.now(), delta = Math.min(2, (now - lastTick) / 1000); lastTick = now;
-    if (!document.hidden && !paused && !document.querySelector('dialog[open]') && !game().recorded) {
-      game().elapsed += delta; $('clock').textContent = time(game().elapsed);
+    if (!document.hidden && !paused && !document.querySelector('dialog[open]') && !game().recorded && !raceFinished(game())) {
+      if(game().mode==='race'){
+        const result=advanceRace(game(),delta);
+        if(result.added.length){arriving=result.added;selected=null;highlighted=[];render(`${result.added.length} new tiles arrived. Clear the board before it fills!`);save(true);}
+        if(result.lost){
+          selected=null;highlighted=[];render();save(true);
+          $('race-result').textContent=`${game().tiles.filter(t=>t.removed).length/2+game().race.waves} pairs matched in ${time(game().elapsed)}. Try a slower interval or a smaller puzzle.`;
+          show('race-over-dialog');
+        }
+        updateCounters();
+      }else game().elapsed += delta;
+      $('clock').textContent = time(game().elapsed);
     }
+    offerLossRecovery();
   }, 1000);
   setInterval(() => save(true), 10000);
+  setupScrollHints();
 }
 async function init() {
   api = window.myjong || await browserAPI();
