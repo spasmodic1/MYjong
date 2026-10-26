@@ -7,7 +7,7 @@ const { Library, accepted } = require('./library.cjs');
 const { startPhone } = require('./phone.cjs');
 const { PetMatcher } = require('./pet-matcher.cjs');
 const root = path.resolve(__dirname, '..');
-protocol.registerSchemesAsPrivileged([{ scheme: 'myjong', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } }]);
+protocol.registerSchemesAsPrivileged([{ scheme: 'myjong', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream:true } }]);
 let window, library, phone, closeReady = false, updateConfigured=false;
 const testingRoot = process.env.MYJONG_TEST_DATA;
 if (testingRoot) app.setPath('userData', path.resolve(testingRoot));

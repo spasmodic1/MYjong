@@ -12,8 +12,8 @@ test('personalization previews, plays each tune and preserves choices and puzzle
   const before=await page.evaluate(()=>window.myjong.load());
   await page.evaluate(()=>{
     Object.defineProperty(document,'hidden',{get:()=>false,configurable:true});
-    window.testNotes=[];const Native=window.AudioContext;
-    window.AudioContext=class extends Native{createOscillator(){const osc=super.createOscillator(),start=osc.start.bind(osc);osc.start=(...args)=>{window.testNotes.push({frequency:osc.frequency.value,type:osc.type});return start(...args);};return osc;}};
+    window.testPlayers=[];const Native=window.Audio;
+    window.Audio=class extends Native{constructor(...args){super(...args);window.testPlayers.push(this);}};
   });
   await page.locator('#settings').click();await page.locator('#theme').selectOption('custom');
   const comfortable=await page.locator('nav .quiet').first().evaluate(el=>parseFloat(getComputedStyle(el).fontSize));
@@ -29,22 +29,26 @@ test('personalization previews, plays each tune and preserves choices and puzzle
   }
   assert.equal(gradients.size,5);
   await page.locator('#music').check();
-  for(const track of ['garden','river','moonlight','sunroom','starlight']){
-    await page.locator('#musicTrack').selectOption(track);
-    assert.ok(await page.evaluate(()=>window.testNotes.length>0));
+  for(const track of ['garden','river','moonlight','sunroom','starlight','welcome']){
+    await page.locator('#menuMusicTrack').selectOption(track);
+    await page.waitForFunction(track=>window.testPlayers.some(p=>p.src.endsWith('/'+track+'.ogg')&&!p.paused&&p.readyState>=2&&p.duration>60),track).catch(async error=>{
+      console.log('Track playback check:',track,await page.evaluate(()=>window.testPlayers.map(p=>({src:p.src,paused:p.paused,ready:p.readyState,duration:p.duration,error:p.error?.message}))));throw error;
+    });
   }
-  const notes=await page.evaluate(()=>window.testNotes);assert.ok(notes.some(n=>n.type==='triangle'));assert.ok(notes.some(n=>n.type==='sine'));
-  assert.ok(notes.every(n=>Number.isFinite(n.frequency)&&n.frequency>0));
-  const screenshots=path.join(root,'Screenshots/0.9.3',`review-${Date.now()}`);await fs.mkdir(screenshots,{recursive:true});
+  await page.evaluate(()=>{const p=window.testPlayers.find(p=>p.src.endsWith('/welcome.ogg'));p.currentTime=p.duration-.25;});
+  await page.waitForFunction(()=>window.testPlayers.some(p=>p.src.endsWith('/welcome.ogg')&&!p.paused&&p.currentTime<1),null,{timeout:5000});
+  await page.locator('#musicTrack').selectOption('starlight');
+  const screenshots=path.join(root,'Screenshots/0.9.4',`review-${Date.now()}`);await fs.mkdir(screenshots,{recursive:true});
   await page.screenshot({path:path.join(screenshots,'settings-custom-colors.png')});
   await page.locator('#settings-dialog [data-close]').click();
+  await page.waitForFunction(()=>window.testPlayers.some(p=>p.src.endsWith('/starlight.ogg')&&!p.paused));
   await page.waitForFunction(()=>[...document.querySelectorAll('.tile-photo')].every(img=>img.naturalWidth>0));
   await page.screenshot({path:path.join(screenshots,'custom-background-lavender.png')});
   await page.waitForFunction(async()=>{const {state}=await window.myjong.load();return state.settings.musicTrack==='starlight'&&state.settings.tileColor==='lavender';});
   await page.reload();await page.waitForSelector('.tile');
   const after=await page.evaluate(()=>window.myjong.load());
   assert.deepEqual(after.state.game.tiles,before.state.game.tiles);
-  for(const [key,value] of Object.entries({theme:'custom',backgroundColor:'#e9d7b8',tileColor:'lavender',textSize:'large',musicTrack:'starlight',music:true}))assert.equal(after.state.settings[key],value);
+  for(const [key,value] of Object.entries({theme:'custom',backgroundColor:'#e9d7b8',tileColor:'lavender',textSize:'large',musicTrack:'starlight',menuMusicTrack:'welcome',music:true}))assert.equal(after.state.settings[key],value);
   assert.equal(await page.locator('body').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(233, 215, 184)');
   await page.locator('#settings').click();assert.equal(await page.locator('#musicTrack').inputValue(),'starlight');
   await page.locator('#theme').selectOption('blue');assert.equal(await page.locator('body').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(36, 79, 102)');

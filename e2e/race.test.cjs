@@ -13,6 +13,7 @@ test('race arrivals pause, survive reload, end on a full board and allow a clear
   await page.locator('#raceInterval').fill('10');await page.locator('#collection').selectOption('traditional');await page.locator('#layout').selectOption('Terrace');await page.locator('#difficulty').selectOption('1');
   await page.getByRole('button',{name:'Start puzzle',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('#new-dialog').open);
   await page.waitForFunction(async()=> (await window.myjong.load()).state.game.mode==='race');
+  await page.waitForFunction(()=>document.querySelector('#board').getAttribute('aria-busy')!=='true');
   const initial=await page.locator('.tile').count();
   await page.locator('#hint').click();let ids=await page.locator('.tile.hint').evaluateAll(tiles=>tiles.map(t=>t.dataset.id));
   for(const id of ids)await page.locator(`.tile[data-id="${id}"]`).click();
@@ -30,6 +31,7 @@ test('race arrivals pause, survive reload, end on a full board and allow a clear
   await page.waitForSelector('#race-over-dialog[open]');assert.equal(await page.locator('#hint').isDisabled(),true);
   await page.locator('#race-over-new').click();await page.locator('#raceInterval').fill('120');
   await page.getByRole('button',{name:'Start puzzle',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('#new-dialog').open);
+  await page.waitForFunction(()=>document.querySelector('#board').getAttribute('aria-busy')!=='true');
   while(await page.locator('.tile').count()){
     await page.locator('#hint').click();ids=await page.locator('.tile.hint').evaluateAll(tiles=>tiles.map(t=>t.dataset.id));assert.equal(ids.length,2);
     for(const id of ids)await page.locator(`.tile[data-id="${id}"]`).click();

@@ -6,7 +6,7 @@ const root=path.resolve(__dirname,'..');
 test('packaged Windows app seeds approved collection, saves on close and retains user changes',{timeout:90000},async t=>{
   const dir=await fs.mkdtemp(path.join(os.tmpdir(),'myjong-package-'));let application;
   t.after(async()=>{await application?.close();await fs.rm(dir,{recursive:true,force:true});});
-  const launch=async()=>{application=await electron.launch({executablePath:path.join(root,'dist/win-unpacked/MYjong.exe'),args:[],env:{...process.env,MYJONG_TEST_DATA:dir,MYJONG_SMOKE:'1'}});const page=await application.firstWindow();page.setDefaultTimeout(15000);await page.waitForSelector('.tile');return page;};
+  const launch=async()=>{application=await electron.launch({executablePath:path.join(root,'dist/win-unpacked/MYjong.exe'),args:[],env:{...process.env,MYJONG_TEST_DATA:dir,MYJONG_SMOKE:'1'}});const page=await application.firstWindow();page.setDefaultTimeout(15000);await page.waitForSelector('.tile');await page.waitForFunction(()=>document.querySelector('#board').getAttribute('aria-busy')!=='true');return page;};
   let page=await launch();
   let loaded=await page.evaluate(()=>window.myjong.load());assert.equal(loaded.library.photos.length,21);assert.equal(loaded.library.subjects.length,5);
   assert.ok(await page.locator('.tile-photo').count()>0);

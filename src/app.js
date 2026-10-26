@@ -17,9 +17,10 @@ let api, library = { photos: [], subjects: [] }, state, selected = null, highlig
 let activeSubject = null, activeCrop = null, saveTimer, lastTick = performance.now(), saveChain = Promise.resolve();
 let importReview;
 let arriving=[];
+let memoryBusy=false,memoryRevealed=[],dealing=false,dealGeneration=0;
 let lossSignature=null,lossWorker=null,rollbackPlan=null;
 const nextHint = createHintCycle();
-const audio = createAudio(() => state.settings);
+const audio = createAudio(() => state.settings,{scene:()=>paused?'paused':document.querySelector('dialog[open]')?'menu':'game',onMusicError:message=>{$('settings-message').textContent=message;}});
 const time = seconds => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
 const game = () => state.game;
 const setMessage = message => { $('status').textContent = message; };
@@ -80,7 +81,7 @@ function updateCounters() {
   const g = game(), remaining = g.tiles.filter(t => !t.removed).length, moves = pairs(g.tiles).length;
   $('remaining').textContent = remaining; $('layout-name').textContent = g.layout;
   $('difficulty-label').textContent = g.difficulty;
-  $('mode-label').textContent = g.mode === 'race' ? 'Race the Clock' : g.mode === 'challenge' ? 'Timed play' : 'No timer';
+  $('mode-label').textContent = g.mode === 'memory'?'Memory':g.mode === 'race' ? 'Race the Clock' : g.mode === 'challenge' ? 'Timed play' : 'No timer';
   $('clock').hidden = $('score').hidden = g.mode === 'relaxed';
   $('race-countdown').hidden=g.mode!=='race';
   if(g.mode==='race'){
@@ -93,10 +94,10 @@ function updateCounters() {
   $('progress-fill').style.width = `${(1 - remaining / g.tiles.length) * 100}%`;
   const hasPhotos = g.tiles.some(t => t.face < 10);
   $('collection-note').textContent = hasPhotos ? (g.tiles.some(t => t.face >= 10) ? 'Your memories & a little tradition' : 'A collection of familiar faces') : 'The traditional collection';
-  $('matching-note').textContent = hasPhotos ? (g.matching === 'subject' ? 'Match the same person or pet, even in different photos.' : 'Match identical photos and traditional symbols.') : 'Match identical traditional symbols.';
-  $('undo').disabled = !g.history.length || g.history.at(-1)?.type==='arrival' || g.recorded || raceFinished(g);
+  $('matching-note').textContent = g.mode==='memory'?'Reveal a tile, remember it, then find its partner. Only open tiles can be flipped.':hasPhotos ? (g.matching === 'subject' ? 'Match the same person or pet, even in different photos.' : 'Match identical photos and traditional symbols.') : 'Match identical traditional symbols.';
+  $('undo').disabled = memoryBusy || !g.history.length || g.history.at(-1)?.type==='arrival' || g.recorded || raceFinished(g);
   $('undo').title=g.mode==='race'?'Undo moves since the latest incoming pair (Ctrl+Z)':'Undo (Ctrl+Z)';
-  $('hint').disabled = $('shuffle').disabled = remaining === 0 || raceFinished(g);
+  $('hint').disabled = $('shuffle').disabled = memoryBusy || remaining === 0 || raceFinished(g);
   $('show-loss-options').hidden=remaining===0||moves>0||raceFinished(g);
   return { remaining, moves };
 }
@@ -105,20 +106,23 @@ function render(message = '') {
   const board = $('board'); board.replaceChildren();
   for (const tile of game().tiles.filter(t => !t.removed).sort((a,b) => a.z - b.z || a.y - b.y)) {
     const free = isFree(tile, game().tiles), button = document.createElement('button');
-    button.className = `tile${free ? '' : ' blocked'}${selected === tile.id ? ' selected' : ''}${highlighted.includes(tile.id) ? ' hint' : ''}${arriving.includes(tile.id)?' race-arrival':''}`;
+    const faceDown=game().mode==='memory'&&selected!==tile.id&&!memoryRevealed.includes(tile.id);
+    button.className = `tile${free ? '' : ' blocked'}${faceDown?' face-down':''}${selected === tile.id ? ' selected' : ''}${highlighted.includes(tile.id) ? ' hint' : ''}${arriving.includes(tile.id)?' race-arrival':''}`;
+    button.disabled=memoryBusy;
     button.dataset.id = tile.id; button.dataset.suit = tile.face % 3;
     button.style.zIndex = tile.z * 10 + 1;
-    button.setAttribute('aria-label', `${tileName(tile)}, ${free ? 'available' : 'blocked'}, row ${tile.y + 1}, column ${tile.x + 1}, layer ${tile.z + 1}`);
+    button.setAttribute('aria-label', `${faceDown?'Hidden tile':tileName(tile)}, ${free ? 'available' : 'blocked'}, row ${tile.y + 1}, column ${tile.x + 1}, layer ${tile.z + 1}`);
     button.setAttribute('aria-pressed', String(selected === tile.id));
-    button.title = `${tileName(tile)} · ${free ? 'Available' : 'Blocked'}`;
-    if (tile.face >= 10) button.append(standardArt(tile.face - 10));
+    button.title = `${faceDown?'Hidden tile':tileName(tile)} · ${free ? 'Available' : 'Blocked'}`;
+    if(faceDown){const back=document.createElement('img');back.className='tile-back';back.src='./assets/branding/emblem.webp';back.alt='';button.append(back);}
+    else if (tile.face >= 10) button.append(standardArt(tile.face - 10));
     else {
       const photo = game().photos[tile.face], variant = photo.variants[tile.variant || 0] || photo.variants[0];
       const img = document.createElement('img'); img.className = 'tile-photo'; img.src = variant.src; img.alt = ''; img.draggable = false;
       img.onerror = () => { const fallback = document.createElement('span'); fallback.className = 'tile-emblem'; fallback.textContent = photo.name.slice(0,1); img.replaceWith(fallback); };
       button.append(img);
     }
-    const caption = document.createElement('span'); caption.className = 'tile-caption'; caption.textContent = tileName(tile); button.append(caption);
+    if(!faceDown){const caption = document.createElement('span'); caption.className = 'tile-caption'; caption.textContent = tileName(tile); button.append(caption);}
     button.onclick = () => choose(tile); board.append(button);
   }
   sizeBoard();
@@ -168,18 +172,45 @@ function rollbackLoss(){
   render(plan.exact?`Back before move ${plan.move}. Try a different pair.`:'Returned to a verified solvable position.');save(true);
 }
 function choose(tile) {
-  if (paused||raceFinished(game())) return;
-  if (!isFree(tile, game().tiles)) { audio.play('blocked'); setMessage('This tile needs space: uncover it and open its left or right side.'); return; }
+  if (paused||dealing||memoryBusy||raceFinished(game())) return;
+  if (!isFree(tile, game().tiles)) { if(game().mode==='memory'){selected=null;render();}audio.play('blocked'); setMessage('This tile needs space: uncover it and open its left or right side.'); return; }
   highlighted = [];
-  if (selected === tile.id) { selected = null; render(); return; }
+  const memory=game().mode==='memory',oldSelected=selected,ghosts=memory?[...new Set([oldSelected,tile.id].filter(id=>id!==null))].map(flipGhost).filter(Boolean):[];
+  if (selected === tile.id) { selected = null; render();animateFlips([tile.id],ghosts);return; }
   const previous = game().tiles.find(t => t.id === selected);
   if (previous && previous.face === tile.face) {
+    if(memory){
+      const current=game();memoryBusy=true;memoryRevealed=[previous.id,tile.id];render();animateFlips([tile.id],ghosts);
+      setTimeout(()=>{if(game()!==current)return;memoryBusy=false;memoryRevealed=[];completeMatch(previous,tile);},matchMedia('(prefers-reduced-motion: reduce)').matches?0:240);
+    }else completeMatch(previous,tile);
+  } else { selected = tile.id; audio.play('select'); render(memory?'Remember this face. Choose another available tile.':previous ? 'Those faces are different. Find a partner for this tile.' : 'Now find its matching face.');if(memory)animateFlips([oldSelected,tile.id],ghosts); }
+}
+function completeMatch(previous,tile){
     matchEffect([previous.id,tile.id]);
     previous.removed = tile.removed = true;
     game().history.push({ type: 'match', ids: [previous.id, tile.id],elapsed:game().elapsed,hints:game().hints,shuffles:game().shuffles });
     selected = null; state.stats.matches++; audio.play('match'); render('A little more room. Nicely matched.');
+    if(game().mode==='memory'&&!document.querySelector('dialog[open]')&&document.activeElement===document.body)$('board').querySelector('.tile:not(.blocked)')?.focus({preventScroll:true});
     if (game().tiles.every(t => t.removed)) win();
-  } else { selected = tile.id; audio.play('select'); render(previous ? 'Those faces are different. Find a partner for this tile.' : 'Now find its matching face.'); }
+}
+function flipGhost(id){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)return null;
+  const original=$('board').querySelector(`[data-id="${id}"]`);if(!original)return null;
+  const bounds=original.getBoundingClientRect(),style=getComputedStyle(original),ghost=document.createElement('div');ghost.className='tile memory-flip-ghost';ghost.setAttribute('aria-hidden','true');
+  Object.assign(ghost.style,{position:'fixed',left:bounds.left+'px',top:bounds.top+'px',width:bounds.width+'px',height:bounds.height+'px',background:style.background,boxShadow:style.boxShadow,borderRadius:style.borderRadius});
+  ghost.style.setProperty('--tile-width',bounds.width+'px');for(const child of original.children)ghost.append(child.cloneNode(true));document.body.append(ghost);return ghost;
+}
+function animateFlips(ids,ghosts){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches){ghosts.forEach(g=>g.remove());return;}
+  ghosts.forEach(ghost=>ghost.animate([{transform:'perspective(600px) rotateY(0)'},{transform:'perspective(600px) rotateY(90deg)'}],{duration:90,easing:'ease-in'}).finished.finally(()=>ghost.remove()).catch(()=>{}));
+  for(const id of new Set(ids)){const tile=$('board').querySelector(`[data-id="${id}"]`);tile?.animate([{transform:'perspective(600px) rotateY(-90deg)',opacity:0},{transform:'perspective(600px) rotateY(0)',opacity:1}],{duration:130,delay:80,fill:'both',easing:'ease-out'});}
+}
+function animateDeal(){
+  const generation=++dealGeneration,board=$('board');
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches){dealing=false;board.inert=false;board.setAttribute('aria-busy','false');return;}
+  dealing=true;board.inert=true;board.setAttribute('aria-busy','true');
+  [...board.children].forEach((tile,index)=>tile.animate([{opacity:0,transform:'translateY(-30px) rotate(-4deg) scale(.96)'},{opacity:1,transform:'translateY(0) rotate(0) scale(1)'}],{duration:230,delay:Math.min(index*6,360),fill:'backwards',easing:'cubic-bezier(.2,.8,.2,1)'}));
+  setTimeout(()=>{if(generation!==dealGeneration)return;dealing=false;board.inert=false;board.setAttribute('aria-busy','false');lastTick=performance.now();},620);
 }
 function matchEffect(ids) {
   if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
@@ -195,12 +226,14 @@ function matchEffect(ids) {
   }
 }
 function hint() {
+  if(memoryBusy||dealing)return;
   if (raceFinished(game())||game().tiles.every(t => t.removed)) return;
   selected = null; highlighted = nextHint(game().tiles).map(t => t.id);
   if (highlighted.length) game().hints++;
   render(highlighted.length ? 'A pair for you. Press Hint again to see another.' : 'No open pairs. Try Undo or Shuffle.');
 }
 function undo() {
+  if(memoryBusy||dealing)return;
   if (game().recorded||raceFinished(game())||game().history.at(-1)?.type==='arrival') return;
   const last = game().history.pop(); if (!last) return;
   if (last.type === 'match') last.ids.forEach(id => { game().tiles.find(t => t.id === id).removed = false; });
@@ -262,7 +295,8 @@ function openNew() {
 }
 function updateRaceOptions(){
   const mode=$('mode').value;$('race-options').hidden=mode!=='race';$('score-rules').hidden=mode==='relaxed';
-  $('score-rules').textContent='100 points per matched pair · Hint −15 · Shuffle −100. '+(mode==='race'?'Race records favor the fastest clear; points break ties.':'Challenge records favor points; faster time breaks ties.');
+  $('memory-options').hidden=mode!=='memory';
+  $('score-rules').textContent='100 points per matched pair · Hint −15 · Shuffle −100. '+(mode==='race'?'Race records favor the fastest clear; points break ties.':`${mode==='memory'?'Memory':'Challenge'} records favor points; faster time breaks ties.`);
 }
 async function startNew(event) {
   event.preventDefault();
@@ -275,10 +309,10 @@ async function startNew(event) {
     if (!await message('A traditional puzzle for now?', 'No named photos are included yet. You can add and name photos in your collection, or play with traditional tiles now.', true, 'Play traditional')) return;
   }
   state.settings = next; state.game = g; state.stats.played++;
-  selected = null; highlighted = []; close('new-dialog'); lastTick = performance.now(); render('A fresh puzzle, just for you.'); save(true);
+  selected = null; highlighted = [];memoryBusy=false;memoryRevealed=[]; close('new-dialog'); lastTick = performance.now(); render('A fresh puzzle, just for you.');animateDeal(); save(true);
 }
 function openSettings() {
-  for (const key of ['theme','tileStyle','tileColor','textSize','backgroundColor','musicTrack','volume']) $(key).value = state.settings[key];
+  for (const key of ['theme','tileStyle','tileColor','textSize','backgroundColor','musicTrack','menuMusicTrack','volume']) $(key).value = state.settings[key];
   for (const key of ['available','captions','sound','music']) $(key).checked = state.settings[key];
   $('settings-message').textContent = ''; show('settings-dialog');
 }
@@ -293,7 +327,7 @@ function openStats() {
   for (const name of state.stats.achievements.length ? state.stats.achievements : ['Your first celebration is waiting. Clear a board to begin.']) {
     const row = document.createElement('p'); row.className = 'achievement'; row.textContent = `✧ ${name}`; content.append(row);
   }
-  const best = document.createElement('h3'); best.textContent = 'Challenge & Race personal bests'; content.append(best);
+  const best = document.createElement('h3'); best.textContent = 'Personal bests'; content.append(best);
   for (const [key, value] of Object.entries(state.stats.best)) { const row = document.createElement('p'); row.textContent = `${key}: ${value.score} points · ${time(value.elapsed)}`; content.append(row); }
   if (!Object.keys(state.stats.best).length) { const p = document.createElement('p'); p.className = 'muted'; p.textContent = 'Try a Challenge or Race the Clock puzzle to record a personal best.'; content.append(p); }
   show('stats-dialog');
@@ -485,7 +519,7 @@ function bind() {
   $('race-over-new').onclick=()=>{close('race-over-dialog');openNew();};
   $('undo').onclick = undo; $('hint').onclick = hint;
   $('shuffle').onclick = () => run(async () => {
-    if(raceFinished(game()))return;
+    if(memoryBusy||dealing||raceFinished(game()))return;
     if (!await message('Give these tiles a fresh start?', 'Shuffle keeps your matched pairs and rearranges the remaining faces. It can be undone.', true, 'Shuffle')) return;
     const before = structuredClone(game().tiles);
     if (reshuffle(game())) { game().history.push({ type: 'shuffle', tiles: before }); game().shuffles++; selected = null; highlighted = []; render('A fresh arrangement. There’s a path through these tiles.'); }
@@ -498,8 +532,9 @@ function bind() {
   $('photos').onclick = () => { $('subject-filter').value='all';renderLibrary();$('library-dialog').scrollTop=0;show('library-dialog');importReview.openPending(); };
   $('win-new').onclick = () => { close('win-dialog'); openNew(); };
   $('musicTrack').replaceChildren(...musicChoices.map(([id,name])=>option(name,id)));
+  $('menuMusicTrack').replaceChildren(...musicChoices.map(([id,name])=>option(name,id)));
   $('tileColor').replaceChildren(...tileColors.map(([id,name])=>option(name,id)));
-  for (const key of ['theme','tileStyle','tileColor','textSize','backgroundColor','musicTrack','available','captions','sound','music','volume']) $(key).oninput = () => {
+  for (const key of ['theme','tileStyle','tileColor','textSize','backgroundColor','musicTrack','menuMusicTrack','available','captions','sound','music','volume']) $(key).oninput = () => {
     state.settings[key] = ['available','captions','sound','music'].includes(key) ? $(key).checked : key === 'volume' ? Number($(key).value) : $(key).value;
     appearance();sizeBoard(); audio.sync(); save();
   };
@@ -559,7 +594,7 @@ function bind() {
   new ResizeObserver(sizeBoard).observe($('board-space'));
   setInterval(() => {
     const now = performance.now(), delta = Math.min(2, (now - lastTick) / 1000); lastTick = now;
-    if (!document.hidden && !paused && !document.querySelector('dialog[open]') && !game().recorded && !raceFinished(game())) {
+    if (!document.hidden && !paused && !dealing && !document.querySelector('dialog[open]') && !game().recorded && !raceFinished(game())) {
       if(game().mode==='race'){
         const result=advanceRace(game(),delta);
         if(result.added.length){arriving=result.added;selected=null;highlighted=[];render(`${result.added.length} new tiles arrived. Clear the board before it fills!`);save(true);}
@@ -575,6 +610,7 @@ function bind() {
     offerLossRecovery();
   }, 1000);
   setInterval(() => save(true), 10000);
+  new MutationObserver(()=>audio.sync()).observe(document.body,{attributes:true,subtree:true,attributeFilter:['open']});
   setupScrollHints();
 }
 async function init() {
@@ -596,6 +632,7 @@ async function init() {
   state.settings = { ...defaults, ...state.settings };
   $('version').textContent = `MYjong ${loaded.version}`;
   bind(); appearance(); render(loaded.recovered ? 'Your previous puzzle could not be restored. A safety copy was kept, and a fresh puzzle is ready.' : restored ? 'Welcome back. Your puzzle is just as you left it.' : 'A fresh puzzle, just for you.'); save(true);
+  if(game().tiles.some(t=>!t.removed))animateDeal();
   importReview.enqueue(library.photos.filter(p=>!p.subjectId).map(p=>p.id));
 }
 init().catch(error => { $('status').textContent = `MYjong could not load your data: ${error.message}. Your existing files have been preserved.`; });

@@ -5,6 +5,7 @@ const root=path.resolve(process.argv[2]||'dist/win-unpacked'),archive=path.join(
 assert.ok(!files.some(f=>/^\/Photos\//i.test(f)||f.endsWith('/photo-catalog.json')||/^\/(Screenshots|Private-Gift)\//.test(f)),'unapproved development assets must not be packaged');
 assert.ok(files.includes('/assets/recognition.js'));
 assert.ok(files.includes('/assets/starter-collection.zip'));
+for(const track of ['garden','river','moonlight','sunroom','starlight','welcome'])assert.ok(files.includes(`/assets/music/${track}.ogg`),'offline arrangement must be bundled');
 const zip=await JSZip.loadAsync(asar.extractFile(archive,'assets/starter-collection.zip'));
 const library=JSON.parse(await zip.file('library.json').async('string'));
 assert.equal(library.photos.length,21);assert.equal(library.subjects.length,5);

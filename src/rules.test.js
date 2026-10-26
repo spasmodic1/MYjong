@@ -57,3 +57,13 @@ test('random terraces include off-center rows and fully supported upper tiles', 
     assert.ok(board.some(t => t.x === tile.x && t.y === tile.y && t.z === tile.z - 1));
   }
 });
+test('named layouts keep distinct silhouettes at every difficulty',()=>{
+  for(const level of [1,2,3]){
+    const boards=['Terrace','Diamond','Butterfly'].map(name=>deal(()=>.5,name,level));
+    assert.equal(new Set(boards.map(board=>JSON.stringify(board.map(t=>[t.x,t.y,t.z])))).size,3);
+    const diamond=boards[1].filter(t=>t.z===0),top=Math.min(...diamond.map(t=>t.y)),bottom=Math.max(...diamond.map(t=>t.y));
+    assert.equal(diamond.filter(t=>t.y===top).length,1);assert.equal(diamond.filter(t=>t.y===bottom).length,1);
+    const wings=boards[2].filter(t=>t.z===0&&t.y===0);assert.ok(wings.some(t=>t.x<2)&&wings.some(t=>t.x>5));assert.ok(wings.every(t=>t.x<2||t.x>5));
+    for(const board of boards)for(const tile of board.filter(t=>t.z>0))assert.ok(board.some(b=>b.x===tile.x&&b.y===tile.y&&b.z===tile.z-1));
+  }
+});

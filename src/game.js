@@ -5,7 +5,7 @@ import {validScore} from './scoreboard.js';
 
 export const defaults = { layout: 'Random', difficulty: 1, theme: '', collection: 'mixed',
   matching: 'identical', mode: 'relaxed', raceInterval:15, available: true, captions: true,
-  sound: true, music: false, musicTrack:'garden', volume: .3, tileStyle: 'porcelain', tileColor:'classic', backgroundColor:'#164c42', textSize:'comfortable', playerName:'', zoom: 1 };
+  sound: true, music: false, musicTrack:'garden', menuMusicTrack:'welcome', volume: .3, tileStyle: 'porcelain', tileColor:'classic', backgroundColor:'#164c42', textSize:'comfortable', playerName:'', zoom: 1 };
 export const emptyStats = () => ({ played: 0, won: 0, matches: 0, best: {}, achievements: [] });
 export const photoUrl = (p, original = false) => p.src || `myjong://app/photo/${p.id}/${original ? 'original' : 'tile'}?v=${p.revision || 0}`;
 export function makeGame(settings, library, random = Math.random) {
@@ -82,11 +82,12 @@ export function validState(state) {
     || s.theme==='custom'&&!validColor(s.backgroundColor)
     || s.tileColor!==undefined&&!tileColors.some(([id])=>id===s.tileColor)
     || s.musicTrack!==undefined&&!musicChoices.some(([id])=>id===s.musicTrack)
+    || s.menuMusicTrack!==undefined&&!musicChoices.some(([id])=>id===s.menuMusicTrack)
     || s.textSize!==undefined&&!['standard','comfortable','large'].includes(s.textSize)
     || s.playerName!==undefined&&(typeof s.playerName!=='string'||s.playerName.length>40)
     || stats.highScores!==undefined&&(!Array.isArray(stats.highScores)||stats.highScores.length>1000||!stats.highScores.every(validScore))
     || !['mixed','photos','traditional'].includes(s.collection) || !['identical','subject'].includes(s.matching)
-    || !['relaxed','challenge','race'].includes(s.mode) || s.raceInterval!==undefined&&!validRaceInterval(s.raceInterval)
+    || !['relaxed','challenge','race','memory'].includes(s.mode) || s.raceInterval!==undefined&&!validRaceInterval(s.raceInterval)
     || !Number.isFinite(s.volume) || s.volume<0 || s.volume>1
     || !['played','won','matches'].every(k=>Number.isInteger(stats[k]) && stats[k]>=0)
     || !Array.isArray(stats.achievements) || stats.achievements.some(a=>typeof a!=='string')
@@ -95,7 +96,7 @@ export function validState(state) {
     || !Array.isArray(g.photos) || g.photos.length > 10 || !Array.isArray(g.history) || g.history.length>(g.mode==='race'?20000:1000)
     || !Number.isFinite(g.elapsed) || g.elapsed < 0) return false;
   if(!['Relaxed','Balanced','Challenging'].includes(g.difficulty) || ![1,2,3].includes(g.level)
-    || !['relaxed','challenge','race'].includes(g.mode) || !['identical','subject'].includes(g.matching)
+    || !['relaxed','challenge','race','memory'].includes(g.mode) || !['identical','subject'].includes(g.matching)
     || !Number.isInteger(g.hints) || g.hints<0 || !Number.isInteger(g.shuffles) || g.shuffles<0
     || typeof g.recorded!=='boolean')return false;
   if(g.mode==='race'&&(!g.race||!validRaceInterval(g.race.interval)||!Number.isInteger(g.race.waves)||g.race.waves<0

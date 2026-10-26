@@ -20,7 +20,8 @@ Download the Windows installer from [Releases](https://github.com/spasmodic1/MYj
 - Local high scores with name entry and the last saved name prefilled. Categories distinguish play style, difficulty, layout, starting board size, and race interval. Challenge ranks score before time; Race ranks fastest clear before score. Up to 1,000 named results are retained, with the top 20 in each category shown.
 - An original jade, ivory, and gold logo and Windows icon, illustrated botanical board frame, and styled menus. Comfortable text is the larger default; Standard and Large options are available.
 - Scrollbars stay hidden; wheel, touch and keyboard scrolling remain available. A clickable More indicator appears when there is more content to see.
-- Four preset backgrounds plus a custom background color picker; two tile finishes plus jade, blue, pink, and lavender tile colors; optional captions and blocked-tile dimming; synthesized matching sounds and five original optional background tunes. Choices persist between sessions.
+- Four preset backgrounds plus a custom background color picker; two tile finishes plus jade, blue, pink, and lavender tile colors; optional captions and blocked-tile dimming; matching sounds and six original arranged music tracks. Menu and game tunes can be selected separately and crossfade between scenes. Choices persist between sessions.
+- Memory mode hides tile faces. Flip an available tile, then choose another; the previous face hides, and matching pairs disappear. Flip and quick tile-dealing animations respect reduced-motion settings.
 - Modern porcelain tiles with large photo/symbol windows, compact controls, matched-pair effects, and Fit/+/− board zoom; motion effects respect the system's reduced-motion preference. See [visual reference notes](./DESIGN-NOTES.md).
 - Folder and file importing; JPEG, PNG, WebP, AVIF and HEIC/HEIF conversion; phone uploads over home Wi-Fi through a QR code.
 - Editable names, inclusion controls, reassignment, merging, independent copies/crops of group photos, pan/zoom/reset controls, and a full-photo option.
@@ -67,6 +68,8 @@ npm run test:personalization # Color previews, music playback and saved preferen
 npm run test:race        # Arrivals, pause, reload, full-board loss and clear-board win
 npm run test:loss        # Automatic loss popup and exact first-losing-move rollback
 npm run test:scores      # Named records, persistence and last-used name
+npm run test:memory      # Hidden faces, flips, matches, saves and reduced motion
+npm run test:layouts     # Distinct silhouettes and quick dealing animation
 npm run build            # Windows NSIS installer, blockmap and latest.yml
 ```
 

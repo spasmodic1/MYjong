@@ -18,3 +18,9 @@ Competitor screenshots are research references only; their artwork, logos, tile 
 Version 0.9.3 adds original generated jade, ivory and gold branding: an interwoven M emblem, MYjong wordmark and transparent botanical frame. Artwork stays around the playing surface while tile photos and traditional marks remain clear. Masters and the exact generation prompts are in [assets/branding](./assets/branding/PROMPTS.md); `tools/prepare-branding.cjs` exports WebP and Windows icon sizes. No personal photos were used for generation.
 
 Comfortable text is 15% larger than the Standard scale, with a further Large option and roomier sidebar. Arbitrary custom backgrounds choose black or white board text by contrast. Motion preferences are respected. Race mode limits undo at arrival boundaries; the relaxed and challenge modes retain their existing undo behavior.
+
+## Layout identities and motion
+
+Version 0.9.4 removes the shared row-width clamp that flattened named shapes. Diamond retains single-tile pointed tips at every difficulty; Terrace is a rectangular stepped pyramid; Butterfly has separated wing lobes and a narrow body. All layers have support beneath them, and generated removal paths are verified in tests. New geometry applies only to new puzzles.
+
+The initial deal places tiles in under a second. Memory mode uses two-phase flips to hide the old face before showing the next. Reduced-motion users get immediate state changes. Game music uses longer original offline arrangements; menu music has its own selection and changes with a short crossfade.

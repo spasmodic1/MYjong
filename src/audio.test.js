@@ -1,25 +1,21 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createAudio} from './audio.js';
-test('music switches, mutes and pauses without accumulating loops or playing hidden',t=>{
-  const previousContext=globalThis.AudioContext,previousDocument=globalThis.document,oscillators=[],intervals=new Map();let id=0;
+test('arrangements crossfade between menus and game, preserve position and stop when hidden',t=>{
+  const previousAudio=globalThis.Audio,previousDocument=globalThis.document,players=[],timers=new Map();let id=0,place='game';
   globalThis.document={hidden:false};
-  globalThis.AudioContext=class{
-    currentTime=0;state='running';destination={};
-    createOscillator(){const osc={frequency:{value:0},stops:[],connect(){return this;},disconnect(){},start(){},stop(time){this.stops.push(time);if(time===undefined)this.onended?.();}};oscillators.push(osc);return osc;}
-    createGain(){return {gain:{setValueAtTime(){},linearRampToValueAtTime(){},exponentialRampToValueAtTime(){},cancelScheduledValues(){},setTargetAtTime(){}},connect(){return this;},disconnect(){}};}
-    suspend(){this.state='suspended';}resume(){this.state='running';}
-  };
-  t.after(()=>{if(previousContext===undefined)delete globalThis.AudioContext;else globalThis.AudioContext=previousContext;if(previousDocument===undefined)delete globalThis.document;else globalThis.document=previousDocument;});
-  t.mock.method(globalThis,'setInterval',callback=>{intervals.set(++id,callback);return id;});
-  t.mock.method(globalThis,'clearInterval',key=>intervals.delete(key));
-  const settings={music:true,musicTrack:'garden',volume:.3,sound:true},audio=createAudio(()=>settings);
-  audio.sync();assert.equal(intervals.size,1);assert.equal(oscillators.length,1);
-  audio.sync();assert.equal(oscillators.length,1,'unrelated appearance changes do not restart music');
-  const garden=oscillators[0];settings.musicTrack='river';audio.sync();assert.equal(intervals.size,1);assert.ok(garden.stops.includes(.04));assert.equal(oscillators[1].type,'triangle');
-  for(const track of ['moonlight','sunroom','starlight']){settings.musicTrack=track;audio.sync();assert.equal(intervals.size,1);}
-  settings.volume=0;audio.sync();const mutedCount=oscillators.length;audio.play('match');assert.equal(oscillators.length,mutedCount);assert.equal(intervals.size,0);
-  settings.volume=.3;audio.sync();assert.equal(intervals.size,1);audio.pause();assert.equal(intervals.size,0);
-  document.hidden=true;audio.sync();assert.equal(intervals.size,0);document.hidden=false;audio.sync();assert.equal(intervals.size,1);
-  settings.music=false;audio.sync();assert.equal(intervals.size,0);
+  globalThis.Audio=class{constructor(src){this.src=src;this.paused=true;this.volume=0;this.currentTime=0;players.push(this);}play(){this.paused=false;return Promise.resolve();}pause(){this.paused=true;}};
+  t.after(()=>{if(previousAudio===undefined)delete globalThis.Audio;else globalThis.Audio=previousAudio;if(previousDocument===undefined)delete globalThis.document;else globalThis.document=previousDocument;});
+  t.mock.method(globalThis,'setInterval',callback=>{timers.set(++id,callback);return id;});t.mock.method(globalThis,'clearInterval',key=>timers.delete(key));
+  const settle=()=>{for(let i=0;i<16;i++)for(const callback of [...timers.values()])callback();};
+  const settings={music:true,musicTrack:'garden',menuMusicTrack:'welcome',volume:.3,sound:false},audio=createAudio(()=>settings,{scene:()=>place});
+  audio.sync();settle();assert.equal(players.length,1);assert.equal(players[0].loop,true);assert.equal(players[0].paused,false);
+  players[0].currentTime=23;audio.sync();assert.equal(players.length,1);
+  place='menu';audio.sync();settle();assert.equal(players[0].paused,true);assert.ok(players[1].src.endsWith('/welcome.ogg'));
+  place='game';audio.sync();settle();assert.equal(players[0].currentTime,23);assert.equal(players[0].paused,false);assert.equal(players[1].paused,true);
+  settings.volume=.5;audio.sync();settle();assert.equal(players[0].currentTime,23);assert.equal(players[0].volume,.4);
+  settings.volume=0;audio.sync();assert.ok(players.every(p=>p.paused));assert.equal(timers.size,0);
+  settings.volume=.3;document.hidden=true;audio.sync();assert.ok(players.every(p=>p.paused));document.hidden=false;audio.sync();settle();
+  place='paused';audio.sync();assert.ok(players.every(p=>p.paused));place='game';audio.sync();settle();audio.pause();assert.ok(players.every(p=>p.paused));
+  settings.music=false;audio.sync();assert.equal(timers.size,0);
 });

@@ -15,6 +15,7 @@ test('Windows app: library, crops, matching, persistence, settings, phone upload
     application = await electron.launch({ args: [root], env: { ...process.env, MYJONG_TEST_DATA: dir, MYJONG_SMOKE:'1' } });
     const page = await application.firstWindow(); page.setDefaultTimeout(12000);
     await page.waitForFunction(() => document.querySelector('#board .tile'));
+    await page.waitForFunction(()=>document.querySelector('#board').getAttribute('aria-busy')!=='true');
     return page;
   };
   let page = await launch(); const errors = [];
@@ -53,6 +54,7 @@ test('Windows app: library, crops, matching, persistence, settings, phone upload
   await page.locator('#collection').selectOption('photos'); await page.locator('#matching').selectOption('subject');
   await page.getByRole('button',{name:'Start puzzle',exact:true}).click();
   await page.waitForFunction(()=>!document.querySelector('#new-dialog').open);
+  await page.waitForFunction(()=>document.querySelector('#board').getAttribute('aria-busy')!=='true');
   assert.ok(await page.locator('.tile-photo').count()>0);
   await page.locator('#hint').click(); assert.equal(await page.locator('.tile.hint').count(),2);
   const pair = await page.locator('.tile.hint').evaluateAll(tiles=>tiles.map(t=>t.dataset.id));
