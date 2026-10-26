@@ -1,10 +1,11 @@
+import {standardTileCount} from './standard-tiles.js';
 import { deal, isFree } from './rules.js';
 import {musicChoices,tileColors,validColor} from './personalization.js';
-import {validRaceInterval} from './race.js';
+import {validRaceInterval,raceNextAt} from './race.js';
 import {validScore} from './scoreboard.js';
 
 export const defaults = { layout: 'Random', difficulty: 1, theme: '', collection: 'mixed',
-  matching: 'identical', mode: 'relaxed', raceInterval:15, available: true, captions: true,
+  matching: 'identical', mode: 'relaxed', raceInterval:15, memoryInterval:0, available: true, captions: true,
   sound: true, music: false, musicTrack:'garden', menuMusicTrack:'welcome', volume: .3, tileStyle: 'porcelain', tileColor:'classic', backgroundColor:'#164c42', textSize:'comfortable', playerName:'', zoom: 1 };
 export const emptyStats = () => ({ played: 0, won: 0, matches: 0, best: {}, achievements: [] });
 export const photoUrl = (p, original = false) => p.src || `myjong://app/photo/${p.id}/${original ? 'original' : 'tile'}?v=${p.revision || 0}`;
@@ -18,7 +19,7 @@ export function makeGame(settings, library, random = Math.random) {
   } else photos = included.map(p => ({ name: library.subjects.find(s => s.id === p.subjectId).name, subjectId:p.subjectId,
     variants: [{ id: p.id, src: photoUrl(p) }] }));
   photos = shuffle(photos, random).slice(0, 10);
-  const standard = shuffle(Array.from({ length: 34 }, (_, i) => i + 10),random);
+  const standard = shuffle(Array.from({ length: standardTileCount }, (_, i) => i + 10),random);
   let identities = settings.collection === 'traditional' ? standard : photos.map((_, i) => i);
   if (settings.collection === 'mixed' && photos.length) identities = standard.flatMap((face,i)=>[i%photos.length,face]);
   if (!identities.length) identities = standard;
@@ -32,7 +33,8 @@ export function makeGame(settings, library, random = Math.random) {
   const game = { tiles: board.map(t => ({ ...t })), layout: board.layout, difficulty: board.difficulty,
     level: settings.difficulty, photos, history: [], elapsed: 0, hints: 0, shuffles: 0,
     mode: settings.mode, matching: settings.matching, recorded: false, started: Date.now(),initialSolution:board.solution.map(pair=>[...pair]) };
-  if(settings.mode==='race')game.race={interval:settings.raceInterval||15,nextAt:settings.raceInterval||15,waves:0,ended:false};
+  if(settings.mode==='race')game.race={interval:settings.raceInterval||15,firstAt:Math.max(30,settings.raceInterval||15),nextAt:Math.max(30,settings.raceInterval||15),waves:0,ended:false};
+  if(settings.mode==='memory')game.memory={interval:settings.memoryInterval||0,nextAt:settings.memoryInterval||0,revealed:[]};
   return game;
 }
 export function shuffle(items, random = Math.random) {
@@ -78,6 +80,7 @@ export function validState(state) {
   const g = state.game,s=state.settings,stats=state.stats;
   if(!['Random','Terrace','Diamond','Butterfly','Random terraces'].includes(s.layout)
     || ![1,2,3].includes(s.difficulty) || !['','blue','plum','sand','custom'].includes(s.theme)
+    || s.memoryInterval!==undefined&&(!Number.isInteger(s.memoryInterval)||s.memoryInterval<0||s.memoryInterval>3600)
     || s.backgroundColor!==undefined&&!validColor(s.backgroundColor)
     || s.theme==='custom'&&!validColor(s.backgroundColor)
     || s.tileColor!==undefined&&!tileColors.some(([id])=>id===s.tileColor)
@@ -100,14 +103,15 @@ export function validState(state) {
     || !Number.isInteger(g.hints) || g.hints<0 || !Number.isInteger(g.shuffles) || g.shuffles<0
     || typeof g.recorded!=='boolean')return false;
   if(g.mode==='race'&&(!g.race||!validRaceInterval(g.race.interval)||!Number.isInteger(g.race.waves)||g.race.waves<0
-    || g.race.nextAt!==(g.race.waves+1)*g.race.interval||typeof g.race.ended!=='boolean'
+    || g.race.nextAt!==raceNextAt(g.race)||g.race.firstAt!==undefined&&g.race.firstAt!==Math.max(30,g.race.interval)||typeof g.race.ended!=='boolean'
     || g.race.waves!==g.history.filter(h=>h.type==='arrival').length||g.recorded&&g.race.ended))return false;
+  if(g.memory!==undefined&&(g.mode!=='memory'||!Number.isInteger(g.memory.interval)||g.memory.interval<0||g.memory.interval>3600||!Number.isFinite(g.memory.nextAt)||g.memory.nextAt<0||!Array.isArray(g.memory.revealed)||new Set(g.memory.revealed).size!==g.memory.revealed.length||g.memory.revealed.some(id=>!g.tiles.some(t=>t.id===id))))return false;
   if(g.mode!=='race'&&g.race!==undefined)return false;
   if(g.photos.some(p=>typeof p.name!=='string' || !Array.isArray(p.variants) || !p.variants.length
     || p.variants.some(v=>typeof v.src!=='string' || !/^(myjong:\/\/(app\/photo\/|photo\/)|\.\/Photos\/|data:image\/)/.test(v.src))))return false;
   const ids = new Set();
   for (const t of g.tiles) {
-    if (!Number.isInteger(t.id) || ids.has(t.id) || !Number.isInteger(t.face) || t.face < 0 || t.face > 43
+    if (!Number.isInteger(t.id) || ids.has(t.id) || !Number.isInteger(t.face) || t.face < 0 || t.face > standardTileCount+9
       || !Number.isFinite(t.x) || t.x < 0 || t.x > 8 || !Number.isFinite(t.y) || t.y < 0 || t.y > 8
       || !Number.isInteger(t.z) || t.z < 0 || t.z > 3 || typeof t.removed !== 'boolean') return false;
     if (t.face < 10 && !g.photos[t.face]?.variants?.length) return false;
@@ -123,11 +127,16 @@ export function validState(state) {
     } else if(entry.type==='arrival') {
       if(g.mode!=='race'||!Array.isArray(entry.tiles)||entry.tiles.length!==2||entry.tiles[0].id===entry.tiles[1].id)return false;
       const current=entry.tiles.map(t=>rewind.find(c=>c.id===t.id));
-      if(current.some(t=>!t||t.removed)||current[0].face!==current[1].face)return false;
+      if(current.some(t=>!t||t.removed))return false;
+      if(entry.swapped){
+        const original=entry.swapped,tile=rewind.find(t=>t.id===original.id);
+        if(!tile||tile.removed||original.removed!==false||current.some(t=>t.id===tile.id)||original.x!==tile.x||original.y!==tile.y||original.z!==tile.z||original.face!==current[1].face||tile.face!==current[0].face)return false;
+        Object.assign(tile,original);
+      }else if(current[0].face!==current[1].face)return false;
       for(const before of entry.tiles){
         const tile=rewind.find(t=>t.id===before.id);
         if(before.removed!==true||before.x!==tile.x||before.y!==tile.y||before.z!==tile.z
-          ||!Number.isInteger(before.face)||before.face<0||before.face>43||before.face<10&&!g.photos[before.face])return false;
+          ||!Number.isInteger(before.face)||before.face<0||before.face>standardTileCount+9||before.face<10&&!g.photos[before.face])return false;
         Object.assign(tile,before);
       }
     } else if(entry.type==='shuffle') {
@@ -136,7 +145,7 @@ export function validState(state) {
       for(const t of entry.tiles) {
         const current=rewind.find(c=>c.id===t.id);
         if(!current || seen.has(t.id) || t.x!==current.x || t.y!==current.y || t.z!==current.z
-          || t.removed!==current.removed || !Number.isInteger(t.face) || t.face<0 || t.face>43
+          || t.removed!==current.removed || !Number.isInteger(t.face) || t.face<0 || t.face>standardTileCount+9
           || t.face<10 && !g.photos[t.face])return false;
         seen.add(t.id);
       }

@@ -8,8 +8,9 @@ import { readSave } from './storage.js';
 import { suggestedCrop, groupDetections } from './photo-analysis.js';
 import {setupImportReview} from './import-review.js';
 import {musicChoices,tileColors,backgroundInk} from './personalization.js';
-import {advanceRace,raceFinished} from './race.js';
+import {advanceRace,raceFinished,raceNextAt} from './race.js';
 import {cleanPlayerName,scoreCategory,rankScores} from './scoreboard.js';
+import {revealMemoryTile} from './memory.js';
 import {setupScrollHints} from './scroll-hints.js';
 
 const $ = id => document.getElementById(id);
@@ -54,8 +55,20 @@ function appearance() {
   document.body.dataset.textSize=s.textSize;
   document.body.style.setProperty('--custom-background',s.backgroundColor);
   document.body.style.setProperty('--board-ink',backgroundInk(s.backgroundColor));
+  renderTilePreview();
   $('custom-background').hidden=s.theme!=='custom';
   $('background-color-value').textContent=s.backgroundColor.toUpperCase();
+}
+function renderTilePreview(){
+  const area=$('tile-preview').querySelector('.preview-tiles');area.replaceChildren();
+  if(!$('settings-dialog').open)return;
+  for(const blocked of [false,true]){
+    const tile=document.createElement('div');tile.className=`tile${blocked?' blocked':''}`;
+    const sample=game().photos[0];
+    if(sample||!blocked){const image=document.createElement('img');image.className='tile-photo';image.src=sample?.variants[0].src||'./assets/branding/emblem.webp';image.alt='';tile.append(image);}
+    else tile.append(standardArt(0));
+    const caption=document.createElement('span');caption.className='tile-caption';caption.textContent=sample?.name||(!blocked?'Photo name':'Dots 1');tile.append(caption);area.append(tile);
+  }
 }
 function sizeBoard() {
   if (!state) return;
@@ -86,7 +99,7 @@ function updateCounters() {
   $('race-countdown').hidden=g.mode!=='race';
   if(g.mode==='race'){
     const seconds=Math.max(0,Math.ceil(g.race.nextAt-g.elapsed));
-    $('race-countdown').textContent=raceFinished(g)?'Race ended':g.recorded?'Board cleared':`Next pair in ${seconds}s`;
+    $('race-countdown').textContent=raceFinished(g)?'Race over · board too full':g.recorded?'Board cleared':`Next pair in ${seconds}s`;
     $('race-countdown').classList.toggle('race-urgent',!raceFinished(g)&&!g.recorded&&seconds<=5);
   }
   $('clock').textContent = time(g.elapsed); $('score').textContent = `${score(g)} points`;
@@ -106,7 +119,7 @@ function render(message = '') {
   const board = $('board'); board.replaceChildren();
   for (const tile of game().tiles.filter(t => !t.removed).sort((a,b) => a.z - b.z || a.y - b.y)) {
     const free = isFree(tile, game().tiles), button = document.createElement('button');
-    const faceDown=game().mode==='memory'&&selected!==tile.id&&!memoryRevealed.includes(tile.id);
+    const faceDown=game().mode==='memory'&&selected!==tile.id&&!memoryRevealed.includes(tile.id)&&!game().memory?.revealed.includes(tile.id);
     button.className = `tile${free ? '' : ' blocked'}${faceDown?' face-down':''}${selected === tile.id ? ' selected' : ''}${highlighted.includes(tile.id) ? ' hint' : ''}${arriving.includes(tile.id)?' race-arrival':''}`;
     button.disabled=memoryBusy;
     button.dataset.id = tile.id; button.dataset.suit = tile.face % 3;
@@ -128,7 +141,7 @@ function render(message = '') {
   sizeBoard();
   const { remaining, moves } = updateCounters();
   arriving=[];
-  setMessage(message || (raceFinished(game())?'No room for the next pair. Start a new race to try again.':remaining === 0 ? 'A lovely little victory. Your board is clear.' : moves === 0 ? 'No open matches right now. Try Undo or Shuffle.' : 'Choose two free tiles with matching faces.'));
+  setMessage(message || (raceFinished(game())?'Race over — the board is too crowded for the next two tiles to land. Start a new race to try again.':remaining === 0 ? 'A lovely little victory. Your board is clear.' : moves === 0 ? 'No open matches right now. Try Undo or Shuffle.' : 'Choose two free tiles with matching faces.'));
   if (focused) (board.querySelector(`[data-id="${focused}"]`) || board.querySelector('.tile:not(.blocked)'))?.focus({ preventScroll: true });
   save();
   if(moves>0||remaining===0){lossSignature=null;rollbackPlan=null;lossWorker?.terminate();lossWorker=null;}
@@ -165,7 +178,7 @@ function rollbackLoss(){
   if(before?.hints!==undefined)g.hints=before.hints;
   if(before?.shuffles!==undefined)g.shuffles=before.shuffles;
   if(g.mode==='race'){
-    g.race.waves=g.history.filter(e=>e.type==='arrival').length;g.race.nextAt=(g.race.waves+1)*g.race.interval;g.race.ended=false;
+    g.race.waves=g.history.filter(e=>e.type==='arrival').length;g.race.nextAt=raceNextAt(g.race);g.race.ended=false;
     if(before?.elapsed===undefined)g.elapsed=g.race.waves*g.race.interval;
   }
   selected=null;highlighted=[];lossSignature=null;close('loss-dialog');lastTick=performance.now();
@@ -288,7 +301,7 @@ function openScores(){
   $('record-current-score').hidden=!game().recorded||Boolean(game().scoreSaved);renderScores();show('scoreboard-dialog');
 }
 function openNew() {
-  for (const key of ['layout','difficulty','collection','matching','mode','raceInterval']) $(key).value = state.settings[key];
+  for (const key of ['layout','difficulty','collection','matching','mode','raceInterval','memoryInterval']) $(key).value = state.settings[key];
   updateRaceOptions();
   $('new-warning').hidden = !game().history.length || game().recorded;
   show('new-dialog');
@@ -303,6 +316,7 @@ async function startNew(event) {
   const next = { ...state.settings };
   for (const key of ['layout','collection','matching','mode']) next[key] = $(key).value;
   next.difficulty = Number($('difficulty').value);
+  next.memoryInterval=Number($('memoryInterval').value);
   next.raceInterval=Number($('raceInterval').value);
   const g = makeGame(next, library);
   if (next.collection !== 'traditional' && !g.photos.length) {
@@ -314,7 +328,7 @@ async function startNew(event) {
 function openSettings() {
   for (const key of ['theme','tileStyle','tileColor','textSize','backgroundColor','musicTrack','menuMusicTrack','volume']) $(key).value = state.settings[key];
   for (const key of ['available','captions','sound','music']) $(key).checked = state.settings[key];
-  $('settings-message').textContent = ''; show('settings-dialog');
+  $('settings-message').textContent = ''; show('settings-dialog');renderTilePreview();
 }
 function openStats() {
   const content = $('stats-content'); content.replaceChildren();
@@ -583,10 +597,14 @@ function bind() {
   $('resume').onclick = () => close('pause-dialog');
   $('pause-dialog').addEventListener('close', () => { paused = false; lastTick = performance.now(); $('board-space').classList.remove('paused'); audio.sync(); });
   document.addEventListener('keydown', event => {
+    if($('splash-dialog').open&&!['Shift','Control','Alt','Meta','CapsLock'].includes(event.key)){event.preventDefault();close('splash-dialog');lastTick=performance.now();audio.sync();return;}
     if (document.querySelector('dialog[open]') || /INPUT|SELECT|TEXTAREA/.test(event.target.tagName)) return;
     if (event.key.toLowerCase() === 'h' && !event.ctrlKey && !event.metaKey) { event.preventDefault(); hint(); }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') { event.preventDefault(); undo(); }
   });
+  $('settings-dialog').addEventListener('close',()=>renderTilePreview());
+  $('splash-start').onclick=()=>{close('splash-dialog');lastTick=performance.now();audio.sync();};
+  $('splash-dialog').addEventListener('cancel',event=>{event.preventDefault();close('splash-dialog');lastTick=performance.now();});
   document.addEventListener('pointerdown', () => { audio.sync(); }, { once: true });
   document.addEventListener('visibilitychange', () => { lastTick = performance.now(); if (document.hidden) { audio.pause(); save(true); } else audio.sync(); });
   window.addEventListener('pagehide', () => save(true));
@@ -597,14 +615,17 @@ function bind() {
     if (!document.hidden && !paused && !dealing && !document.querySelector('dialog[open]') && !game().recorded && !raceFinished(game())) {
       if(game().mode==='race'){
         const result=advanceRace(game(),delta);
-        if(result.added.length){arriving=result.added;selected=null;highlighted=[];render(`${result.added.length} new tiles arrived. Clear the board before it fills!`);save(true);}
+        if(result.added.length){arriving=result.added;highlighted=[];render(`${result.added.length} new tiles arrived. Clear the board before it fills!`);save(true);}
         if(result.lost){
           selected=null;highlighted=[];render();save(true);
-          $('race-result').textContent=`${game().tiles.filter(t=>t.removed).length/2+game().race.waves} pairs matched in ${time(game().elapsed)}. Try a slower interval or a smaller puzzle.`;
+          $('race-result').textContent=`The board is too crowded for the next two tiles to land. This race has ended. ${game().tiles.filter(t=>t.removed).length/2+game().race.waves} pairs matched in ${time(game().elapsed)}. Try a slower interval or a smaller puzzle.`;
           show('race-over-dialog');
         }
         updateCounters();
-      }else game().elapsed += delta;
+      }else {
+        const g=game();g.elapsed+=delta;
+        if(!memoryBusy&&revealMemoryTile(g,selected)!==null)render('An available tile is now permanently revealed.');
+      }
       $('clock').textContent = time(game().elapsed);
     }
     offerLossRecovery();
@@ -631,7 +652,7 @@ async function init() {
   }
   state.settings = { ...defaults, ...state.settings };
   $('version').textContent = `MYjong ${loaded.version}`;
-  bind(); appearance(); render(loaded.recovered ? 'Your previous puzzle could not be restored. A safety copy was kept, and a fresh puzzle is ready.' : restored ? 'Welcome back. Your puzzle is just as you left it.' : 'A fresh puzzle, just for you.'); save(true);
+  bind(); show('splash-dialog'); appearance(); render(loaded.recovered ? 'Your previous puzzle could not be restored. A safety copy was kept, and a fresh puzzle is ready.' : restored ? 'Welcome back. Your puzzle is just as you left it.' : 'A fresh puzzle, just for you.'); save(true);
   if(game().tiles.some(t=>!t.removed))animateDeal();
   importReview.enqueue(library.photos.filter(p=>!p.subjectId).map(p=>p.id));
 }

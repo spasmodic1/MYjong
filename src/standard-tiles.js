@@ -1,4 +1,6 @@
+export const standardTileCount=35;
 export function standardName(index) {
+  if(index===34)return 'Red rabbit';
   if(index<10)return `${index<5?'Dots':'Bamboo'} ${index%5+1}`;
   if(index<14)return `Dots ${index-4}`;
   if(index<18)return `Bamboo ${index-8}`;
@@ -14,6 +16,21 @@ export function standardArt(index) {
   svg.setAttribute('viewBox', '0 0 60 86');
   svg.setAttribute('aria-hidden', 'true');
   svg.classList.add('tile-standard');
+  if(index===34){
+    // A vermilion rabbit mark, drawn in the same small, flat palette as the suits.
+    const mark=(tag,attributes)=>{const node=document.createElementNS(ns,tag);for(const [key,value] of Object.entries(attributes))node.setAttribute(key,value);svg.append(node);return node;};
+    const red='#bd392e',outline='#8e2e27',ivory='#fff5df';
+    mark('path',{d:'M25 36 C16 27 15 10 20 8 C25 6 31 23 30 32 C31 21 36 7 41 10 C47 14 39 31 34 37',fill:red,stroke:outline,'stroke-width':1.5,'stroke-linejoin':'round'});
+    mark('path',{d:'M22 14 Q22 24 27 30 M39 16 Q36 25 33 30',fill:'none',stroke:ivory,'stroke-width':2.5,'stroke-linecap':'round'});
+    mark('circle',{cx:47,cy:58,r:7,fill:red,stroke:outline,'stroke-width':1.5});
+    mark('path',{d:'M23 43 C33 38 45 46 45 59 C45 68 39 74 29 74 L16 74 Q11 73 14 69 L21 66 C14 61 15 50 23 43 Z',fill:red,stroke:outline,'stroke-width':1.5,'stroke-linejoin':'round'});
+    mark('path',{d:'M33 55 C25 53 24 64 30 67 L38 68 M22 52 L19 66',fill:'none',stroke:'#e18d78','stroke-width':2,'stroke-linecap':'round'});
+    mark('path',{d:'M35 35 C35 27 22 24 18 32 L13 38 Q9 42 16 45 C23 51 35 46 35 35 Z',fill:red,stroke:outline,'stroke-width':1.5,'stroke-linejoin':'round'});
+    mark('ellipse',{cx:20,cy:35,rx:2.2,ry:2.7,fill:ivory});
+    mark('circle',{cx:19.5,cy:35,r:1.1,fill:outline});
+    mark('path',{d:'M12 39 L16 40 M17 44 Q20 45 22 42',fill:'none',stroke:ivory,'stroke-width':1.5,'stroke-linecap':'round'});
+    return svg;
+  }
   const name=standardName(index),count=Number(name.split(' ').at(-1));
   if(index>=18) {
     const text=document.createElementNS(ns,'text');text.setAttribute('x','30');text.setAttribute('y',index<27?'40':'56');text.setAttribute('text-anchor','middle');text.setAttribute('font-size',index<27?'32':'41');text.setAttribute('font-family','Microsoft YaHei, SimSun, Georgia, serif');

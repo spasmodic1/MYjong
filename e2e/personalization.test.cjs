@@ -7,7 +7,7 @@ test('personalization previews, plays each tune and preserves choices and puzzle
   const library=await new Library(dir).init();await library.restore(path.join(root,'assets/starter-collection.zip'));
   const app=await electron.launch({...process.env.MYJONG_TEST_PACKAGE==='1'?{executablePath:path.join(root,'dist/win-unpacked/MYjong.exe'),args:[]}:{args:[root]},env:{...process.env,MYJONG_TEST_DATA:dir,MYJONG_SMOKE:'1'}});
   t.after(async()=>{await app.close();await fs.rm(dir,{recursive:true,force:true});});
-  const page=await app.firstWindow();page.setDefaultTimeout(15000);await page.waitForSelector('.tile');
+  const page=await app.firstWindow();page.setDefaultTimeout(15000);await page.waitForSelector('#board .tile');await page.keyboard.press('Enter');
   await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].webContents.setAudioMuted(true));
   const before=await page.evaluate(()=>window.myjong.load());
   await page.evaluate(()=>{
@@ -45,7 +45,7 @@ test('personalization previews, plays each tune and preserves choices and puzzle
   await page.waitForFunction(()=>[...document.querySelectorAll('.tile-photo')].every(img=>img.naturalWidth>0));
   await page.screenshot({path:path.join(screenshots,'custom-background-lavender.png')});
   await page.waitForFunction(async()=>{const {state}=await window.myjong.load();return state.settings.musicTrack==='starlight'&&state.settings.tileColor==='lavender';});
-  await page.reload();await page.waitForSelector('.tile');
+  await page.reload();await page.waitForSelector('#board .tile');await page.keyboard.press('Enter');
   const after=await page.evaluate(()=>window.myjong.load());
   assert.deepEqual(after.state.game.tiles,before.state.game.tiles);
   for(const [key,value] of Object.entries({theme:'custom',backgroundColor:'#e9d7b8',tileColor:'lavender',textSize:'large',musicTrack:'starlight',menuMusicTrack:'welcome',music:true}))assert.equal(after.state.settings[key],value);

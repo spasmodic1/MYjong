@@ -9,25 +9,25 @@ function remove(game,pair){for(const tile of pair)tile.removed=true;game.history
 test('race arrivals obey the interval, preserve score and restore safe matching pairs',()=>{
   const game=makeGame({...defaults,mode:'race',raceInterval:5,layout:'Terrace'},library);
   const initial=structuredClone(game.tiles),pair=pairs(game.tiles)[0];remove(game,pair);
-  assert.equal(score(game),100);assert.deepEqual(advanceRace(game,4).added,[]);
+  assert.equal(score(game),100);assert.deepEqual(advanceRace(game,29).added,[]);
   const result=advanceRace(game,1);assert.equal(result.added.length,2);assert.equal(result.lost,false);
-  const added=result.added.map(id=>game.tiles.find(t=>t.id===id));assert.equal(added[0].face,added[1].face);
+  const added=result.added.map(id=>game.tiles.find(t=>t.id===id));assert.ok(added.every(t=>pairs(game.tiles).some(pair=>pair.includes(t))));
   assert.ok(added.every(t=>isFree(t,game.tiles)));assert.equal(score(game),100);assert.equal(validState(stateFor(game)),true);
-  assert.equal(game.race.nextAt,10);assert.equal(game.tiles.length,initial.length);
-  remove(game,added);assert.equal(score(game),200);assert.equal(validState(stateFor(game)),true);
+  assert.equal(game.race.nextAt,35);assert.equal(game.tiles.length,initial.length);
+  remove(game,pairs(game.tiles)[0]);assert.equal(score(game),200);assert.equal(validState(stateFor(game)),true);
   const before=structuredClone(game.tiles);assert.equal(reshuffle(game),true);game.history.push({type:'shuffle',tiles:before});
   assert.equal(validState(stateFor(game)),true,'arrival history remains valid across later matches and shuffles');
 });
 test('full boards end the race once and completed games never receive tiles',()=>{
   const game=makeGame({...defaults,mode:'race',raceInterval:5},library);
-  assert.equal(advanceRace(game,5).lost,true);assert.equal(game.race.ended,true);
+  assert.equal(advanceRace(game,30).lost,true);assert.equal(game.race.ended,true);
   const snapshot=structuredClone(game);assert.deepEqual(advanceRace(game,100),{added:[],lost:false});assert.deepEqual(game,snapshot);
   assert.equal(validState(stateFor(game)),true);
   const won=makeGame({...defaults,mode:'race'},library);won.recorded=true;const elapsed=won.elapsed;
   assert.deepEqual(advanceRace(won,100),{added:[],lost:false});assert.equal(won.elapsed,elapsed);
 });
 test('race saves reject broken arrival history and unsupported intervals',()=>{
-  const game=makeGame({...defaults,mode:'race',raceInterval:5},library);remove(game,pairs(game.tiles)[0]);advanceRace(game,5);
+  const game=makeGame({...defaults,mode:'race',raceInterval:5},library);remove(game,pairs(game.tiles)[0]);advanceRace(game,30);
   const state=stateFor(game);assert.equal(validState(state),true);
   game.history.at(-1).tiles[0].removed=false;assert.equal(validState(state),false);
   game.history.at(-1).tiles[0].removed=true;game.race.interval=0;assert.equal(validState(state),false);
@@ -42,4 +42,25 @@ test('incoming pairs remain supported and removable across stacked layouts',()=>
     for(const id of ids){const tile=game.tiles.find(t=>t.id===id);assert.equal(isFree(tile,game.tiles),true);assert.ok(tile.z===0||game.tiles.some(b=>!b.removed&&b.x===tile.x&&b.y===tile.y&&b.z===tile.z-1));}
     assert.equal(validState(stateFor(game)),true);
   }
+});
+test('drops match an existing available tile without changing existing faces',()=>{
+ const game=makeGame({...defaults,mode:'race'},library);
+ game.tiles=Array.from({length:6},(_,id)=>({id,x:(id%3)*3,y:Math.floor(id/3)*2,z:0,face:10+Math.floor(id/2),removed:false}));
+ remove(game,[game.tiles[4],game.tiles[5]]);
+ const existing=structuredClone(game.tiles.filter(t=>!t.removed));
+ const ids=addRacePair(game,()=>0),added=ids.map(id=>game.tiles.find(t=>t.id===id));
+ assert.equal(added[0].face,added[1].face);assert.equal(game.history.at(-1).swapped,undefined);
+ assert.deepEqual(game.tiles.filter(t=>existing.some(old=>old.id===t.id)),existing);
+ assert.ok(existing.some(old=>old.face===added[0].face&&isFree(game.tiles.find(t=>t.id===old.id),game.tiles)));
+ for(const face of new Set(game.tiles.map(t=>t.face)))assert.equal(game.tiles.filter(t=>!t.removed&&t.face===face).length%2,0);
+ for(const tile of added){const pair=pairs(game.tiles).find(p=>p.includes(tile));assert.ok(pair);remove(game,pair);}
+ assert.equal(validState(stateFor(game)),true);
+});
+
+test('arrivals preserve the face of the selected tile during drops',()=>{
+ const game=makeGame({...defaults,mode:'race'},library);
+ game.tiles=Array.from({length:6},(_,id)=>({id,x:(id%3)*3,y:Math.floor(id/3)*2,z:0,face:10+Math.floor(id/2),removed:false}));
+ remove(game,[game.tiles[4],game.tiles[5]]);
+ const selected=structuredClone(game.tiles[0]);assert.equal(addRacePair(game,()=>0).length,2);
+ assert.deepEqual(game.tiles[0],selected);assert.notEqual(game.history.at(-1).swapped?.id,selected.id);assert.equal(validState(stateFor(game)),true);
 });

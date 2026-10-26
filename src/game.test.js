@@ -59,3 +59,11 @@ test('challenge ranks points, while race ranks speed so extra arrivals cannot fa
   g.mode='race';assert.equal(betterResult(g,{score:score(g)+1000,elapsed:25}),true);
   assert.equal(betterResult(g,{score:0,elapsed:10}),false);
 });
+
+test('red rabbit is part of the default traditional pool and survives save and shuffle',()=>{
+ const settings={...defaults,collection:'traditional',layout:'Terrace',difficulty:3};
+ const game=makeGame(settings,library,()=>.9999),state={version:2,settings,stats:emptyStats(),game};
+ assert.ok(game.tiles.some(t=>t.face===44));assert.equal(validState(state),true);
+ assert.equal(reshuffle(game,()=>.5),true);assert.ok(game.tiles.some(t=>t.face===44));assert.equal(validState(state),true);
+ const bad=structuredClone(state);bad.game.tiles[0].face=45;assert.equal(validState(bad),false);
+});

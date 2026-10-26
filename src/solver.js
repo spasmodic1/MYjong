@@ -56,7 +56,7 @@ export function analyzeDeadEnd(snapshot,{maxMs=8000,maxNodes=250000}={}){
       const entry=history[i];
       if(entry.type==='match')for(const id of entry.ids)byId.get(id).removed=false;
       else if(entry.type==='shuffle'){tiles=entry.tiles.map(t=>({...t}));byId=new Map(tiles.map(t=>[t.id,t]));}
-      else if(entry.type==='arrival')for(const before of entry.tiles)Object.assign(byId.get(before.id),before);
+      else if(entry.type==='arrival'){for(const before of entry.tiles)Object.assign(byId.get(before.id),before);if(entry.swapped)Object.assign(byId.get(entry.swapped.id),entry.swapped);}
     }
     return tiles;
   };

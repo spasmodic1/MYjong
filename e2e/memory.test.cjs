@@ -10,7 +10,7 @@ test('Memory flips one face at a time, removes matches, saves and respects reduc
   await fs.writeFile(path.join(dir,'state.json'),JSON.stringify(state));await fs.writeFile(path.join(dir,'library.json'),JSON.stringify({version:1,photos:[],subjects:[]}));
   const app=await electron.launch({...process.env.MYJONG_TEST_PACKAGE==='1'?{executablePath:path.join(root,'dist/win-unpacked/MYjong.exe'),args:[]}:{args:[root]},env:{...process.env,MYJONG_TEST_DATA:dir,MYJONG_SMOKE:'1'}});
   t.after(async()=>{await app.close();await fs.rm(dir,{recursive:true,force:true});});
-  const page=await app.firstWindow();page.setDefaultTimeout(15000);await page.waitForSelector('.tile');
+  const page=await app.firstWindow();page.setDefaultTimeout(15000);await page.waitForSelector('#board .tile');await page.keyboard.press('Enter');
   await page.evaluate(()=>{window.animations=[];const animate=Element.prototype.animate;Element.prototype.animate=function(frames,options){window.animations.push({id:this.dataset.id,frames,options});return animate.call(this,frames,options);};});
   assert.equal(await page.locator('.face-down').count(),6);assert.equal(await page.locator('.tile-standard').count(),0);
   await page.locator('.tile[data-id="0"]').click();assert.equal(await page.locator('.face-down').count(),5);
@@ -19,7 +19,7 @@ test('Memory flips one face at a time, removes matches, saves and respects reduc
   assert.ok(await page.evaluate(()=>window.animations.some(a=>a.options.delay===80)));
   await page.locator('.tile[data-id="3"]').click();await page.waitForFunction(()=>document.querySelectorAll('.tile').length===4);
   await page.waitForFunction(async()=> (await window.myjong.load()).state.game.history.length===1);
-  await page.reload();await page.waitForSelector('.tile');assert.equal(await page.locator('.face-down').count(),4);
+  await page.reload();await page.waitForSelector('#board .tile');await page.keyboard.press('Enter');assert.equal(await page.locator('.face-down').count(),4);
   for(const id of [0,1,4,5])await page.locator(`.tile[data-id="${id}"]`).click();await page.waitForSelector('#win-dialog[open]');
   await page.locator('#win-dialog [data-close]').click();await page.emulateMedia({reducedMotion:'reduce'});
   await page.locator('#new').click();await page.locator('#layout').selectOption('Diamond');await page.locator('#collection').selectOption('traditional');

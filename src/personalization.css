@@ -1,6 +1,11 @@
-/* Custom color affects the playing surface; controls retain their readable panels. */
+/* Carry the custom palette through the board, menus and controls. */
 body.custom{background-color:var(--custom-background);background-image:none}
-.custom .topbar,.custom .sidebar,.custom footer{background:#123b32}
+body.custom{--panel:var(--custom-background);--muted:var(--board-ink);--gold:var(--board-ink);color:var(--board-ink)}
+.custom .topbar,.custom .sidebar,.custom footer{background:var(--custom-background);color:var(--board-ink)}
+.custom dialog,.custom label,.custom .muted,.custom .eyebrow,.custom .notice,.custom .game-details,.custom .sidebar-note,.custom .puzzle-summary,.custom .puzzle-summary strong,.custom #background-color-value{color:var(--board-ink)}
+.custom .notice{background:#80808020}
+.custom button.primary{background:#ffe0a0;color:#273f31;border-color:#d2ad69}
+.custom input,.custom select,.custom button:not(.primary){border-color:currentColor}
 .custom .play-area{background:none;color:var(--board-ink)}
 .custom .board-heading,.custom #pair-count,.custom #status,.custom #pause,.custom .board-zoom button{color:var(--board-ink)}
 .custom .board-zoom,.custom #pair-count,.custom #pause{border-color:currentColor;background:transparent}
@@ -16,8 +21,8 @@ body[data-tile-color]:not([data-tile-color="classic"]) .tile{background:linear-g
 #background-color-value{font:13px ui-monospace,monospace;color:#d4dece}
 #race-countdown{color:#ffe0a0;border-color:#ffe0a066;background:#ffe0a012}
 #race-countdown.race-urgent{color:#fff0d1;background:#97351c;border-color:#ffad79}
-.race-arrival{animation:race-arrival .5s ease-out}
-@keyframes race-arrival{from{outline:4px solid #ffe0a0;filter:brightness(1.4)}to{outline:0 solid transparent}}
+.race-arrival{animation:race-arrival .85s cubic-bezier(.2,.7,.3,1) both;z-index:100!important}
+@keyframes race-arrival{0%{transform:translateY(-65vh) rotate(-9deg);opacity:0}18%{opacity:1}75%{transform:translateY(5px) rotate(2deg)}100%{transform:translateY(0) rotate(0);outline:3px solid #ffe0a0}}
 @media(prefers-reduced-motion:reduce){.race-arrival{animation:none;outline:3px solid #ffe0a0}}
 /* Readable type and larger targets; the board still fits the available space. */
 body{--text-scale:1.15;font-size:calc(16px * var(--text-scale))}
@@ -42,3 +47,10 @@ dialog h2{font-size:calc(29px * var(--text-scale))}
 .photo-card label,.photo-card select,.subject-chip,.library-toolbar span,#background-color-value{font-size:calc(13px * var(--text-scale))}
 .tile-caption,.tile:has(.tile-photo) .tile-caption{font-size:clamp(calc(10px * var(--text-scale)),calc(var(--tile-width) * .15 * var(--text-scale)),calc(18px * var(--text-scale)))}
 @media(max-width:700px){.topbar{justify-content:center}nav{flex-wrap:wrap;justify-content:center}.tool-row button{min-height:calc(42px * var(--text-scale))}.board-heading{flex-wrap:wrap}.board-heading #pair-count{margin-left:0}.sidebar .tool-row{flex-wrap:wrap}footer{flex-wrap:wrap}}
+
+#tile-preview{padding:16px 18px 22px;background:#80808018;border-radius:12px;margin-bottom:20px}
+.preview-tiles{display:flex;gap:30px;--tile-width:74px;padding:4px 8px}
+.preview-tiles .tile{position:relative;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center}
+#splash-dialog{width:100vw;max-width:none;height:100dvh;max-height:none;border:0;border-radius:0;margin:0;text-align:center;padding:22vh 24px 24px;background:var(--panel)}
+#splash-dialog>img{width:min(580px,75vw);height:auto;margin-bottom:28px}
+#splash-dialog>p{margin:18px auto}

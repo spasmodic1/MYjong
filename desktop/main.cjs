@@ -70,6 +70,7 @@ app.whenReady().then(async () => {
   window = new BrowserWindow({ width: 1380, height: 900, minWidth: 900, minHeight: 650,
     title: 'MYjong', icon:path.join(root,'assets/icon.png'), backgroundColor: '#123e36', autoHideMenuBar: true, show: process.env.MYJONG_SMOKE !== '1',
     webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, sandbox: true, nodeIntegration: false, backgroundThrottling: false } });
+  window.maximize();
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   window.webContents.on('will-navigate', event => event.preventDefault());
   window.webContents.session.setPermissionRequestHandler((_wc, _permission, callback) => callback(false));
