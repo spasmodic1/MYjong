@@ -1,4 +1,4 @@
-import {seasons,normalizeSeasonal,currentSeason,seasonalFace,seasonalArt,seasonalBackground,usesSeasonalFace,seasonalImage,seasonalIconIndex} from './seasonal.js';
+import {seasons,normalizeSeasonal,currentSeason,seasonalFace,seasonalArt,seasonalBackground,usesSeasonalFace,seasonalImage,seasonalIconIndex,gameSeason,gameSeasonSettings,migrateSeasonalGame} from './seasonal.js';
 import { isFree, pairs } from './rules.js';
 import { makeGame, defaults, emptyStats, photoUrl, reshuffle, score, validState, betterResult } from './game.js';
 import { createHintCycle } from './hints.js';
@@ -22,7 +22,7 @@ let arriving=[];
 let memoryBusy=false,memoryRevealed=[],dealing=false,dealGeneration=0;
 let lossSignature=null,lossWorker=null,rollbackPlan=null;
 const nextHint = createHintCycle();
-const audio = createAudio(() => state.settings,{scene:()=>paused?'paused':document.querySelector('dialog[open]')?'menu':'game',onMusicError:message=>{$('settings-message').textContent=message;}});
+const audio = createAudio(() => state.settings,{season:()=>activeSeason,scene:()=>paused?'paused':document.querySelector('dialog[open]')?'menu':'game',onMusicError:message=>{$('settings-message').textContent=message;}});
 const time = seconds => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
 const game = () => state.game;
 const setMessage = message => { $('status').textContent = message; };
@@ -50,24 +50,25 @@ function save(immediate = false) {
   if (immediate) commit(); else saveTimer = setTimeout(commit, 150);
 }
 let activeSeason=null,seasonStamp="";
-function faceArt(index){return activeSeason&&usesSeasonalFace(state.settings,index)?seasonalArt(activeSeason,index):standardArt(index);}
+const seasonSkin=()=>gameSeasonSettings(game());
+function faceArt(index){return activeSeason&&usesSeasonalFace(seasonSkin(),index)?seasonalArt(activeSeason,index):standardArt(index);}
 function appearance() {
   const s = normalizeSeasonal(state.settings);
-  activeSeason=currentSeason(s);seasonStamp=new Date().toDateString();
+  migrateSeasonalGame(game(),s);activeSeason=gameSeason(game());seasonStamp=new Date().toDateString();
   document.body.className = [s.theme==='seasonal'?'blue':s.theme, s.tileStyle === 'porcelain' ? 'porcelain' : '', s.available ? '' : 'no-dim', s.captions ? '' : 'no-captions'].join(' ');
   document.body.dataset.tileColor=s.tileColor;
   document.body.dataset.textSize=s.textSize;
   document.body.style.setProperty('--custom-background',s.backgroundColor);
   document.body.style.setProperty('--board-ink',backgroundInk(s.backgroundColor));
-  const seasonalBg=Boolean(activeSeason&&s.seasonalBackground);
+  const seasonalBg=Boolean(activeSeason&&game().seasonal.background);
   document.body.classList.toggle('seasonal-background',seasonalBg);
   if(seasonalBg)document.body.classList.remove('custom');
-  document.body.classList.toggle('seasonal-tiles',Boolean(activeSeason&&s.seasonalTiles));
+  document.body.classList.toggle('seasonal-tiles',Boolean(activeSeason&&seasonSkin().seasonalTiles&&game().seasonal.finish!==false));
   document.body.dataset.season=activeSeason?.id||'';
-  const preview=currentSeason({...s,seasonalMode:true});
+  const nextSeason=currentSeason({...s,seasonalMode:true}),preview=activeSeason||nextSeason;
   const toggle=$('seasonal-toggle');toggle.replaceChildren();
   toggle.setAttribute('aria-pressed',String(s.seasonalMode));
-  const label=preview?`${preview.name} · ${s.seasonalMode?'seasonal mode on; switch to default':'seasonal mode off; switch on'}`:'No theme enabled this month · seasonal mode '+(s.seasonalMode?'on':'off');
+  const label=`Current puzzle: ${activeSeason?.name||'default'}. Next puzzle: ${s.seasonalMode&&nextSeason?nextSeason.name:'default'}. Click to change the next puzzle’s mode.`;
   toggle.title=label;toggle.setAttribute('aria-label',label);
   toggle.style.setProperty('--preview-bg',preview?.bg||'#244f66');
   toggle.style.setProperty('--preview-tile',preview?.tint||'#fff7df');
@@ -89,7 +90,7 @@ function renderTilePreview(){
     const sample=game().photos[0];
     if(sample||!blocked){const image=document.createElement('img');image.className='tile-photo';image.src=sample?.variants[0].src||'./assets/branding/emblem.webp';image.alt='';tile.append(image);}
     else tile.append(faceArt(0));
-    const caption=document.createElement('span');caption.className='tile-caption';caption.textContent=sample?.name||(!blocked?'Photo name':activeSeason&&state.settings.seasonalTiles?seasonalFace(activeSeason,0).name:'Dots 1');tile.append(caption);area.append(tile);
+    const caption=document.createElement('span');caption.className='tile-caption';caption.textContent=sample?.name||(!blocked?'Photo name':activeSeason&&seasonSkin().seasonalTiles?seasonalFace(activeSeason,0).name:'Dots 1');tile.append(caption);area.append(tile);
   }
 }
 function sizeBoard() {
@@ -110,7 +111,7 @@ function sizeBoard() {
   }
 }
 function tileName(tile) {
-  return tile.face >= 10 ? (activeSeason&&usesSeasonalFace(state.settings,tile.face-10)?seasonalFace(activeSeason,tile.face-10).name:standardName(tile.face - 10)) : game().photos[tile.face]?.name || 'Photo';
+  return tile.face >= 10 ? (activeSeason&&usesSeasonalFace(seasonSkin(),tile.face-10)?seasonalFace(activeSeason,tile.face-10).name:standardName(tile.face - 10)) : game().photos[tile.face]?.name || 'Photo';
 }
 function updateCounters() {
   const g = game(), remaining = g.tiles.filter(t => !t.removed).length, moves = pairs(g.tiles).length;
@@ -129,8 +130,8 @@ function updateCounters() {
   $('progress-fill').style.width = `${(1 - remaining / g.tiles.length) * 100}%`;
   const hasPhotos = g.tiles.some(t => t.face < 10);
   $('collection-note').textContent = hasPhotos ? (g.tiles.some(t => t.face >= 10) ? 'Your memories & a little tradition' : 'A collection of familiar faces') : 'The traditional collection';
-  if(activeSeason&&state.settings.seasonalTiles&&g.tiles.some(t=>t.face>=10))$('collection-note').textContent=(hasPhotos?'Your memories & ':'')+activeSeason.name+' collection';
-  $('matching-note').textContent = g.mode==='memory'?'Reveal a tile, remember it, then find its partner. Only open tiles can be flipped.':hasPhotos ? (g.matching === 'subject' ? 'Match the same person or pet, even in different photos.' : 'Match identical photos and traditional symbols.') : activeSeason&&state.settings.seasonalTiles?(state.settings.seasonalFaceMix==='mixed'?'Match identical traditional symbols, or the same seasonal picture and number.':'Match the same seasonal picture and number.'):'Match identical traditional symbols.';
+  if(activeSeason&&seasonSkin().seasonalTiles&&g.tiles.some(t=>t.face>=10))$('collection-note').textContent=(hasPhotos?'Your memories & ':'')+activeSeason.name+' collection';
+  $('matching-note').textContent = g.mode==='memory'?'Reveal a tile, remember it, then find its partner. Only open tiles can be flipped.':hasPhotos ? (g.matching === 'subject' ? 'Match the same person or pet, even in different photos.' : 'Match identical photos and traditional symbols.') : activeSeason&&seasonSkin().seasonalTiles?(seasonSkin().seasonalFaceMix==='mixed'?'Match identical traditional symbols or the same seasonal picture.':'Match the same seasonal picture.'):'Match identical traditional symbols.';
   $('undo').disabled = memoryBusy || !g.history.length || g.history.at(-1)?.type==='arrival' || g.recorded || raceFinished(g);
   $('undo').title=g.mode==='race'?'Undo moves since the latest incoming pair (Ctrl+Z)':'Undo (Ctrl+Z)';
   $('hint').disabled = $('shuffle').disabled = memoryBusy || remaining === 0 || raceFinished(g);
@@ -346,7 +347,7 @@ async function startNew(event) {
     if (!await message('A traditional puzzle for now?', 'No named photos are included yet. You can add and name photos in your collection, or play with traditional tiles now.', true, 'Play traditional')) return;
   }
   state.settings = next; state.game = g; state.stats.played++;
-  selected = null; highlighted = [];memoryBusy=false;memoryRevealed=[]; close('new-dialog'); lastTick = performance.now(); render('A fresh puzzle, just for you.');animateDeal(); save(true);
+  selected = null; highlighted = [];memoryBusy=false;memoryRevealed=[]; close('new-dialog'); lastTick = performance.now(); appearance();render('A fresh puzzle, just for you.');animateDeal(); save(true);
 }
 function seasonalChoices(){
   const s=normalizeSeasonal(state.settings),area=$('seasonal-choices');area.replaceChildren();
@@ -581,8 +582,8 @@ function bind() {
     if (reshuffle(game())) { game().history.push({ type: 'shuffle', tiles: before }); game().shuffles++; selected = null; highlighted = []; render('A fresh arrangement. There’s a path through these tiles.'); }
     else await message('These stacks need an earlier move', 'Undo a few matches or start another puzzle. The remaining stack shape could not be paired into a solvable arrangement.');
   });
-  $('seasonal-toggle').onclick=()=>{state.settings.seasonalMode=!state.settings.seasonalMode;appearance();render('',{appearanceOnly:true});};
-  $('seasonalFaceMix').onchange=()=>{state.settings.seasonalFaceMix=$('seasonalFaceMix').value;appearance();render('',{appearanceOnly:true});};
+  $('seasonal-toggle').onclick=()=>{state.settings.seasonalMode=!state.settings.seasonalMode;appearance();render('Seasonal choices apply to your next puzzle. This puzzle keeps its theme.',{appearanceOnly:true});};
+  $('seasonalFaceMix').onchange=()=>{state.settings.seasonalFaceMix=$('seasonalFaceMix').value;appearance();render('Seasonal choices apply to your next puzzle.',{appearanceOnly:true});};
   for(const key of ['seasonalMode','seasonalBackground','seasonalTiles','seasonalMusic'])$(key).oninput=()=>{state.settings[key]=$(key).checked;appearance();render('',{appearanceOnly:true});};
   $('settings').onclick = openSettings; $('help').onclick = () => show('help-dialog'); $('statistics').onclick = openStats;
   $('high-scores').onclick=openScores;$('score-category').onchange=renderScores;$('save-score').onclick=saveNamedScore;
@@ -595,8 +596,8 @@ function bind() {
   $('tileColor').replaceChildren(...tileColors.map(([id,name])=>option(name,id)));
   for (const key of ['theme','tileStyle','tileColor','textSize','backgroundColor','musicTrack','menuMusicTrack','available','captions','sound','music','volume']) $(key).oninput = () => {
     state.settings[key] = ['available','captions','sound','music'].includes(key) ? $(key).checked : key === 'volume' ? Number($(key).value) : $(key).value;
-    if(key==='theme')state.settings.seasonalBackground=$(key).value==='seasonal';
-    if(key==='tileColor'||key==='tileStyle')state.settings.seasonalTiles=false;
+    if(key==='theme'){state.settings.seasonalBackground=$(key).value==='seasonal';game().seasonal.background=Boolean(activeSeason&&state.settings.seasonalBackground);}
+    if(key==='tileColor'||key==='tileStyle'){state.settings.seasonalTiles=false;game().seasonal.finish=false;}
     appearance();render('',{appearanceOnly:true});sizeBoard(); audio.sync(); save();
   };
   $('backup').onclick = () => run(async () => { if (await api.backup()) $('settings-message').textContent = 'Backup saved. Keep a copy somewhere safe.'; });

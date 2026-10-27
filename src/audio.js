@@ -1,6 +1,6 @@
-import {seasonalMusicTrack} from './seasonal.js';
+import {seasonalMusicTrack,seasonalTracks} from './seasonal.js';
 // Original bundled arrangements for music; short synthesized tones remain for game feedback.
-export function createAudio(settings,{scene=()=> 'game',onMusicError=()=>{}}={}){
+export function createAudio(settings,{scene=()=> 'game',season=()=>undefined,onMusicError=()=>{}}={}){
   let context,active=null,fadeTimer=null;
   const players=new Map(),voices=new Set();
   const level=()=>Math.max(0,Math.min(1,settings().volume||0))*.8;
@@ -17,7 +17,8 @@ export function createAudio(settings,{scene=()=> 'game',onMusicError=()=>{}}={})
   function sync(){
     const s=settings(),place=scene();
     if(!s.music||document.hidden||place==='paused'||s.volume<=0){stopMusic();return;}
-    const track=seasonalMusicTrack(s)||(place==='menu'?(s.menuMusicTrack||'welcome'):(s.musicTrack||'garden'));
+    const activeSeason=season(),seasonalTrack=activeSeason===undefined?seasonalMusicTrack(s):s.seasonalMusic===false?null:seasonalTracks[activeSeason?.id];
+    const track=seasonalTrack||(place==='menu'?(s.menuMusicTrack||'welcome'):(s.musicTrack||'garden'));
     let player=players.get(track);
     if(!player){player=new Audio(new URL(`../assets/music/${track}.ogg`,import.meta.url).href);player.loop=true;player.preload='auto';player.volume=0;players.set(track,player);}
     if(active===track&&!player.paused&&Math.abs(player.volume-level())<.001)return;

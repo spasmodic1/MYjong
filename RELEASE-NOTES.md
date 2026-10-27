@@ -1,3 +1,11 @@
+MYjong 0.9.10 simplifies seasonal matching.
+
+- Removed seasonal number markers and numbered names. Candy matches Candy, and all seasonal names follow Show names.
+- Each picture now has one matching identity. Existing numbered puzzles migrate with their board, undo/shuffle history and race arrivals preserved.
+- Seasonal mode and theme choices apply to the next puzzle. Current puzzles keep their theme across preference changes, month boundaries and reloads.
+
+Use Settings → Check for Updates, or install MYjong-Setup-0.9.10.exe.
+
 MYjong 0.9.9 brings painted tiles and a year of seasonal scenery.
 
 - All 35 traditional tile faces now use original painted artwork, including the red-and-gold rabbit. All 126 seasonal illustrations match the botanical scenic style.

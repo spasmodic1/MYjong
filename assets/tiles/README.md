@@ -8,4 +8,4 @@ Exact generation prompts are in [tile-art-prompts.json](../seasonal/tile-art-pro
 
 `tools/import-seasonal-tiles.cjs` slices selected generated atlases; `tools/apply-tile-art-overrides.cjs` applies reviewed single-image replacements. Both accept local manifests, preserve the original generation files, and produce offline bundled assets. `tools/inspect-tile-art.cjs` renders ignored QA contact sheets.
 
-Seasonal number markers are part of the matching identity and remain visible when names are hidden. The seven pictures each have five numbered variants, preserving 35 distinct identities. Traditional tiles use their recognizable conventional marks instead.
+Each seasonal picture has one matching identity and one plain name. Show names controls its caption. Seasonal choices are captured when a puzzle starts; later preference changes apply to the next puzzle. Older numbered saves migrate the board, undo and shuffle snapshots, and race-arrival history together.

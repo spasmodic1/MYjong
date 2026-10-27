@@ -33,15 +33,42 @@ export function currentSeason(s,date=new Date()){
  const choices=seasons.filter(t=>t.month===date.getMonth()&&s.seasonalEnabled.includes(t.id));
  return choices.find(t=>t.id===s.seasonalPreferred[date.getMonth()])||choices[0]||null;
 }
-// Each traditional identity keeps a unique symbol + number combination (7 × 5).
-export function seasonalFace(season,index){const face=season.faces[index%7],number=Math.floor(index/7)+1;return {...face,number,name:`${face.name} ${number}`};}
-// Decide by identity, so every copy of a matching face uses the same artwork.
-export const usesSeasonalFace=(settings,index)=>settings.seasonalTiles&&(settings.seasonalFaceMix==='all'||index%2===0);
+// One matching identity per illustration. No numbered variants.
+export const seasonalIndices=[0,8,2,10,4,12,6];
+export function seasonalFace(season,index){return {...season.faces[index%7]};}
+export const usesSeasonalFace=(settings,index)=>settings.seasonalTiles&&(settings.seasonalFaceMix==='all'||seasonalIndices.includes(index));
+export function seasonalSnapshot(settings,date=new Date()){
+ const s=normalizeSeasonal({...settings}),theme=currentSeason(s,date);
+ return {theme:theme?.id||null,tiles:Boolean(theme&&s.seasonalTiles),background:Boolean(theme&&s.seasonalBackground),mix:s.seasonalFaceMix,finish:true};
+}
+export const gameSeason=game=>seasons.find(s=>s.id===game?.seasonal?.theme)||null;
+export const gameSeasonSettings=game=>({seasonalTiles:Boolean(game?.seasonal?.tiles),seasonalFaceMix:game?.seasonal?.mix||'mixed'});
+export const validSeasonalSnapshot=s=>s===undefined||s&&typeof s==='object'&&(s.theme===null||seasons.some(t=>t.id===s.theme))&&typeof s.tiles==='boolean'&&typeof s.background==='boolean'&&['mixed','all'].includes(s.mix)&&(s.theme!==null||!s.tiles&&!s.background);
+export function migrateSeasonalGame(game,settings){
+ if(game.seasonal!==undefined)return false;
+ game.seasonal=seasonalSnapshot(settings);
+ if(!game.seasonal.tiles)return true;
+ // Collapse 0.9.9's numbered pictures in the board and all undo snapshots.
+ const map=tile=>{if(tile.face>=10){const index=tile.face-10;if(game.seasonal.mix==='all'||index%2===0)tile.face=10+seasonalIndices[index%7];}};
+ game.tiles.forEach(map);
+ for(const entry of game.history){entry.tiles?.forEach(map);if(entry.swapped)map(entry.swapped);}
+ let rewind=game.tiles.map(t=>({...t}));
+ for(const entry of [...game.history].reverse()){
+  if(entry.type==='match')for(const id of entry.ids)rewind.find(t=>t.id===id).removed=false;
+  else if(entry.type==='shuffle')rewind=entry.tiles.map(t=>({...t}));
+  else if(entry.type==='arrival'){
+   const current=entry.tiles.map(t=>rewind.find(c=>c.id===t.id));
+   if(entry.mixed===true&&current[0].face===current[1].face)delete entry.mixed;
+   if(entry.swapped)Object.assign(rewind.find(t=>t.id===entry.swapped.id),entry.swapped);
+   for(const before of entry.tiles)Object.assign(rewind.find(t=>t.id===before.id),before);
+  }
+ }
+ return true;
+}
 export function seasonalArt(season,index){
- const face=seasonalFace(season,index),node=document.createElement('span');node.className='seasonal-face';node.setAttribute('aria-hidden','true');
+ const node=document.createElement('span');node.className='seasonal-face';node.setAttribute('aria-hidden','true');
  const symbol=document.createElement('span');symbol.className='seasonal-symbol';symbol.append(seasonalImage(season,index));
- const number=document.createElement('span');number.className='seasonal-number';number.textContent=face.number;
- node.append(symbol,number);return node;
+ node.append(symbol);return node;
 }
 export const seasonalBackground=season=>`url("${new URL(`../assets/seasonal/${season.id}.webp`,import.meta.url).href}")`;
 export const seasonalTracks={snow:'snowfall',christmas:'christmas-bells',halloween:'halloween-waltz',hanukkah:'candlelight',spring:'spring-bloom',easter:'spring-bloom',solstice:'snowfall'};

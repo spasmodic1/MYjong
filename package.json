@@ -1,6 +1,6 @@
 {
   "name": "myjong",
-  "version": "0.9.9",
+  "version": "0.9.10",
   "description": "A personal, offline mahjong solitaire game for Windows",
   "author": "MYjong",
   "main": "desktop/main.cjs",

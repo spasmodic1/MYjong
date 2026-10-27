@@ -3,6 +3,7 @@ import { deal, isFree } from './rules.js';
 import {musicChoices,tileColors,validColor} from './personalization.js';
 import {validRaceInterval,raceNextAt} from './race.js';
 import {validScore} from './scoreboard.js';
+import {seasonalSnapshot,seasonalIndices,validSeasonalSnapshot} from './seasonal.js';
 
 export const defaults = { layout: 'Random', difficulty: 1, theme: 'blue', collection: 'mixed',
   matching: 'subject', mode: 'relaxed', raceInterval:5, memoryInterval:4, available: false, captions: false,
@@ -19,7 +20,13 @@ export function makeGame(settings, library, random = Math.random) {
   } else photos = included.map(p => ({ name: library.subjects.find(s => s.id === p.subjectId).name, subjectId:p.subjectId,
     variants: [{ id: p.id, src: photoUrl(p) }] }));
   photos = shuffle(photos, random).slice(0, 10);
-  const standard = shuffle(Array.from({ length: standardTileCount }, (_, i) => i + 10),random);
+  const seasonal=seasonalSnapshot(settings);
+  let pool=Array.from({length:standardTileCount},(_,i)=>i);
+  if(seasonal.tiles){
+    const pictures=[...seasonalIndices];
+    pool=seasonal.mix==='all'?pictures:[...pictures,...shuffle(pool.filter(i=>!seasonalIndices.includes(i)),random).slice(0,7)];
+  }
+  const standard = shuffle(pool.map(i=>i+10),random);
   let identities = settings.collection === 'traditional' ? standard : photos.map((_, i) => i);
   if (settings.collection === 'mixed' && photos.length) identities = standard.flatMap((face,i)=>[i%photos.length,face]);
   if (!identities.length) identities = standard;
@@ -31,7 +38,7 @@ export function makeGame(settings, library, random = Math.random) {
     }
   });
   const game = { tiles: board.map(t => ({ ...t })), layout: board.layout, difficulty: board.difficulty,
-    level: settings.difficulty, photos, history: [], elapsed: 0, hints: 0, shuffles: 0,
+    level: settings.difficulty, photos, seasonal, history: [], elapsed: 0, hints: 0, shuffles: 0,
     mode: settings.mode, matching: settings.matching, recorded: false, started: Date.now(),initialSolution:board.solution.map(pair=>[...pair]) };
   if(settings.mode==='race')game.race={interval:settings.raceInterval||15,firstAt:Math.max(30,settings.raceInterval||15),nextAt:Math.max(30,settings.raceInterval||15),waves:0,ended:false};
   if(settings.mode==='memory')game.memory={interval:settings.memoryInterval||0,nextAt:settings.memoryInterval||0,revealed:[]};
@@ -78,6 +85,7 @@ export const betterResult=(game,best)=>!best||(game.mode==='race'
 export function validState(state) {
   if (!state || state.version !== 2 || !state.game || !state.settings || !state.stats) return false;
   const g = state.game,s=state.settings,stats=state.stats;
+  if(!validSeasonalSnapshot(g.seasonal))return false;
   if(!['Random','Terrace','Diamond','Butterfly','Random terraces'].includes(s.layout)
     || ![1,2,3].includes(s.difficulty) || !['','blue','plum','sand','custom','seasonal'].includes(s.theme)
     || s.memoryInterval!==undefined&&(!Number.isInteger(s.memoryInterval)||s.memoryInterval<0||s.memoryInterval>3600)

@@ -15,7 +15,6 @@ body.seasonal-tiles .tile:not(.face-down){background:linear-gradient(135deg,#fff
 .seasonal-tiles .tile.face-down{background:linear-gradient(135deg,var(--season-bg),#172d35);border-color:var(--season-accent)}
 .seasonal-face{width:78%;height:70%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2%;pointer-events:none}
 .seasonal-symbol{overflow:hidden}
-.seasonal-number{font:700 clamp(12px,calc(var(--tile-width) * .19),24px)/1.1 'Segoe UI',sans-serif;color:#24433e;background:#ffffffb0;min-width:1.4em;text-align:center;border-radius:50%;border:1px solid #546a5d55}
 .seasonal-month{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;padding:14px 0;border-top:1px solid #ffffff25}
 .seasonal-month>strong{width:100%;color:#ffe4af}
 .seasonal-month label.check{margin:0;min-height:36px}
@@ -30,7 +29,6 @@ body.seasonal-tiles .tile:not(.face-down){background:linear-gradient(135deg,#fff
 .seasonal-face{flex:0 0 70%;min-width:0;min-height:0;overflow:hidden;position:relative}
 .seasonal-symbol{width:100%;height:72%;min-height:0;flex:0 0 72%;display:grid;place-items:center;overflow:hidden;line-height:1}
 
-.seasonal-number{flex:none}
 
 /* Painted assets use a consistent contained window, independent of font metrics. */
 .tile-standard{object-fit:contain;object-position:center;display:block}
@@ -39,6 +37,5 @@ body.seasonal-tiles .tile:not(.face-down){background:linear-gradient(135deg,#fff
 .seasonal-mini .seasonal-illustration{width:21px;height:27px}
 .seasonal-month label.check{display:flex;align-items:center;gap:8px}
 .seasonal-month label.check>.seasonal-illustration{width:28px;height:28px;flex:none}
-.seasonal-face{display:grid;grid-template-rows:minmax(0,1fr) auto;gap:3%;justify-items:center}
+.seasonal-face{display:grid;grid-template-rows:minmax(0,1fr);gap:0;justify-items:center}
 .seasonal-symbol{height:100%;min-height:0}
-.seasonal-number{justify-self:center}
