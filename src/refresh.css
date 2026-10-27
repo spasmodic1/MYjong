@@ -1,0 +1,53 @@
+/* A quiet garden setting, with a readable interface above the illustrated board. */
+:root{--panel:#153d39;--muted:#c5d8d1;--gold:#f0d9a7}
+body:not(.custom):not(.seasonal-background){background:#173b3c;background-image:linear-gradient(140deg,#294b49,#142e37)}
+body.blue:not(.seasonal-background){background-color:#244f66;background-image:linear-gradient(140deg,#284b59,#172e40)}
+body.plum:not(.seasonal-background){background-color:#523c60;background-image:linear-gradient(140deg,#504455,#2e303f)}
+body.sand:not(.seasonal-background){background-color:#766c50;background-image:linear-gradient(140deg,#625d4b,#393f37)}
+body:not(.custom):not(.seasonal-background) #board-space{background:linear-gradient(#143b3a08,#112e3715),url('../assets/branding/lakeside-garden.webp') left bottom/cover no-repeat}
+body.blue:not(.seasonal-background) #board-space{background-image:linear-gradient(#123c6630,#122d4e18),url('../assets/branding/lakeside-garden.webp')}
+body.plum:not(.seasonal-background) #board-space{background-image:linear-gradient(#5a2c5730,#432d411a),url('../assets/branding/lakeside-garden.webp')}
+body.sand:not(.seasonal-background) #board-space{background-image:linear-gradient(#bf985622,#725b2815),url('../assets/branding/lakeside-garden.webp')}
+body:not(.seasonal-background) #board-space:before{background:none;opacity:1;border:1px solid #e6ddc445;border-radius:22px;inset:7px}
+body:not(.seasonal-background) #board-space:after{inset:12px;border-color:#e5f2e018;box-shadow:none}
+.topbar{padding:12px 24px;background:#102f30e8;border-bottom:1px solid #e6e6cc24;box-shadow:0 6px 24px #071d2528}
+.brand-emblem{width:58px;height:58px;filter:drop-shadow(0 3px 4px #0004)}
+.brand .eyebrow{font-weight:400;color:#c8d9d0;letter-spacing:.3px}
+nav{gap:7px}nav .quiet{border:1px solid transparent;color:#e0e9e3}nav .quiet:hover{background:#ffffff0b;border-color:#ffffff20}
+nav .icon-button{background:#ffffff08;border-color:#ffffff20}
+.sidebar{margin:14px 0 12px 14px;padding:22px 18px 16px;border:1px solid #d5e3d320;border-radius:20px;background:linear-gradient(150deg,#234b45e8,#112f31f0);box-shadow:0 8px 28px #051c2520}
+.sidebar>h2:after{font-family:Georgia,serif;font-weight:400;font-size:22px;color:#f0eedb}
+.puzzle-summary{border-top-color:#d3e0d126}.puzzle-summary strong{font-size:46px;font-weight:400;color:#f4e4c0;text-shadow:none}
+.game-details>span{border-radius:8px;background:#edf1dd08;border-color:#dae7d320}
+button.primary{background:linear-gradient(145deg,#f8e9c7,#e4c994);border-color:#f7e4b9;box-shadow:inset 0 1px #fff9,0 3px 10px #071b2526}
+.tool-row button,#shuffle{background:#ffffff07;border-color:#c5dbcd36;box-shadow:none}
+.tool-row button:hover,#shuffle:hover{background:#ffffff13}
+.play-area{padding:7px 16px 2px;background:none}#board-space{border:1px solid #dfebd72b;box-shadow:0 10px 30px #071b2528;border-radius:24px}
+.board-heading{min-height:44px}.board-heading #pair-count{background:#edf4dd09;border-color:#edf4dd20}
+.status-row{min-height:42px}footer{background:#102f302b;color:#c2d6cd}
+dialog:not(:where(#splash-dialog)){background-color:var(--panel);border:1px solid #dce7cf47;box-shadow:0 24px 100px #071b2599,0 0 0 1px #081f2533;background-image:linear-gradient(140deg,#ffffff05,transparent)}
+dialog::backdrop{background:#061b2378;backdrop-filter:blur(5px)}
+.seasonal-toggle{min-height:48px;padding:6px 11px;gap:8px;box-shadow:none!important;border-color:#d1e3cb55}
+.seasonal-next-label strong{font-size:12px}.seasonal-next-label small{font-size:10px;opacity:.85}
+#board-space,#board-space *{-webkit-user-select:none;user-select:none}
+#board-space img,.brand img,.splash-emblem{-webkit-user-drag:none}
+#board-space img{pointer-events:none}
+#splash-dialog{display:none;padding:0;isolation:isolate;background:#173d3e url('../assets/branding/welcome-garden.webp') center/cover no-repeat;box-shadow:none;color:#f9f4e5;overflow:auto}
+#splash-dialog[open]{display:flex;align-items:center;justify-content:center}
+#splash-dialog:before{content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,#102f3010,#102f3020 32%,#102f307a 65%,#102f3070)}
+.splash-content{width:min(610px,90vw);margin-left:28%;padding:50px 28px;text-align:center;text-shadow:0 2px 20px #0d302b55}
+.splash-emblem{display:block;width:108px;height:108px;object-fit:contain;margin:0 auto 18px;filter:drop-shadow(0 5px 12px #071b2540)}
+.splash-content>.eyebrow{font-size:11px;letter-spacing:3px;color:#f0e7cc}
+.splash-title{font:400 clamp(68px,8vw,104px)/1.15 Georgia,serif;letter-spacing:-5px;margin:14px 0 20px;color:#fff6df}
+.splash-title span{font-style:italic}.splash-content>p{font-size:18px;line-height:1.75;color:#edf0e2;margin:0 auto 28px}
+#splash-start{min-width:230px;min-height:55px;font-size:17px;padding:12px 25px}#splash-start span{margin-left:24px}
+.splash-content>.splash-hint{font-size:12px;margin:20px 0 0;color:#d3e2d8}
+@media(max-width:1100px){.topbar{padding:10px 16px}.sidebar{margin-left:10px}.play-area{padding-left:12px;padding-right:12px}}
+@media(max-width:700px){.topbar{padding:10px;gap:8px}.brand-emblem{width:44px;height:44px}.brand-wordmark{width:150px}.sidebar{margin:6px 8px;padding:10px 12px;border-radius:14px;width:auto!important}.play-area{padding:0 6px}.seasonal-toggle{max-width:235px}.splash-content{margin-left:0;padding:28px 15px;background:#1035317a;border:1px solid #e4eddb35;border-radius:24px;backdrop-filter:blur(6px)}.splash-emblem{width:84px;height:84px}.splash-content>p{font-size:16px}.splash-title{font-size:70px}.status-row{min-height:36px}}
+@media(max-height:650px){.splash-content{padding-top:16px;padding-bottom:16px}.splash-emblem{width:65px;height:65px;margin-bottom:8px}.splash-title{font-size:64px;margin:8px 0}.splash-content>p{margin-bottom:16px}}
+
+.default-scenery-preview{display:block;width:29px;height:29px;border-radius:6px;object-fit:cover;object-position:left bottom}.seasonal-mini>.tile-standard{width:21px;height:27px;object-fit:contain}.splash-content{-webkit-user-select:none;user-select:none}
+
+.brand-wordmark{font:400 43px/1.05 Georgia,serif;letter-spacing:-2px;color:#fff2d4;width:auto!important;max-width:none}.brand-wordmark>span{font-style:italic}.brand .eyebrow{margin-top:5px}@media(max-width:700px){.brand-wordmark{font-size:37px}}
+
+.custom .brand-wordmark,.custom .brand .eyebrow,.custom nav .quiet,.custom .sidebar>h2:after{color:var(--board-ink)}

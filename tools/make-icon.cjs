@@ -1,6 +1,2 @@
-const fs=require('node:fs/promises');
-const sharp=require('sharp');
-const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256"><rect x="0" y="0" width="256" height="256" rx="54" fill="#154a3d"/><rect x="52" y="41" width="145" height="185" rx="22" fill="#648364"/><rect x="48" y="30" width="145" height="185" rx="22" fill="#edcf91"/><rect x="53" y="26" width="145" height="180" rx="22" fill="#fff2d6"/><rect x="65" y="38" width="121" height="155" rx="16" fill="none" stroke="#c4aa74" stroke-width="2"/><path d="M87 145V83l38 47 38-47v62M80 146h17m57 0h18" fill="none" stroke="#28594e" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="125" cy="171" r="5" fill="#b86748"/></svg>`;
-(async()=>{await fs.mkdir('assets',{recursive:true});await fs.writeFile('assets/icon.svg',svg);const buffers=[];for(const size of [256,128,64,32,16])buffers.push({size,bytes:await sharp(Buffer.from(svg)).resize(size,size).png().toBuffer()});
-const header=Buffer.alloc(6+16*buffers.length);header.writeUInt16LE(1,2);header.writeUInt16LE(buffers.length,4);let offset=header.length;
-buffers.forEach(({size,bytes},i)=>{const start=6+i*16;header[start]=size===256?0:size;header[start+1]=header[start];header.writeUInt16LE(1,start+4);header.writeUInt16LE(32,start+6);header.writeUInt32LE(bytes.length,start+8);header.writeUInt32LE(offset,start+12);offset+=bytes.length;});await fs.writeFile('assets/icon.ico',Buffer.concat([header,...buffers.map(b=>b.bytes)]));await fs.writeFile('assets/icon.png',buffers[0].bytes);})();
+// Export Windows icon sizes from the generated red rabbit tile artwork.
+require('./prepare-branding.cjs');

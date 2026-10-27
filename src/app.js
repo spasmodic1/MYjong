@@ -65,16 +65,18 @@ function appearance() {
   if(seasonalBg)document.body.classList.remove('custom');
   document.body.classList.toggle('seasonal-tiles',Boolean(activeSeason&&seasonSkin().seasonalTiles&&game().seasonal.finish!==false));
   document.body.dataset.season=activeSeason?.id||'';
-  const nextSeason=currentSeason({...s,seasonalMode:true}),preview=s.seasonalMode?nextSeason:null;
+  const nextSeason=currentSeason({...s,seasonalMode:true}),preview=!s.seasonalMode?nextSeason:null;
   const toggle=$('seasonal-toggle');toggle.replaceChildren();
-  toggle.setAttribute('aria-pressed',String(s.seasonalMode));
-  const label=`Current puzzle: ${activeSeason?.name||'default'}. Next puzzle: ${s.seasonalMode&&nextSeason?nextSeason.name:'default'}. Click to change the next puzzle’s mode.`;
+  toggle.removeAttribute('aria-pressed');toggle.dataset.queuedMode=s.seasonalMode?'seasonal':'default';
+  const targetMode=s.seasonalMode?'Default':'Seasonal';
+  const label=`Switch to ${targetMode} for the next puzzle${!s.seasonalMode&&nextSeason?`: ${nextSeason.name}`:''}. Currently scheduled: ${s.seasonalMode&&nextSeason?nextSeason.name:'Default'}. Current puzzle: ${activeSeason?.name||'Default'}.`;
+  toggle.dataset.targetMode=targetMode.toLowerCase();
   toggle.title=label;toggle.setAttribute('aria-label',label);
   toggle.style.setProperty('--preview-bg',preview?.bg||'#244f66');
   toggle.style.setProperty('--preview-tile',preview?.tint||'#fff7df');
-  const icon=document.createElement('span');icon.className='seasonal-toggle-icon';if(preview)icon.append(seasonalImage(preview,seasonalIconIndex(preview)));else icon.textContent='◌';icon.setAttribute('aria-hidden','true');
-  const mini=document.createElement('span');mini.className='seasonal-mini';mini.setAttribute('aria-hidden','true');if(preview)mini.append(seasonalImage(preview,0));else mini.textContent='東';
-  const caption=document.createElement('span');caption.className='seasonal-next-label';const heading=document.createElement('small');heading.textContent='Next puzzle';const mode=document.createElement('strong');mode.textContent=preview?`Seasonal · ${preview.name}`:'Default';caption.append(heading,mode);toggle.append(icon,mini,caption);
+  const icon=document.createElement('span');icon.className='seasonal-toggle-icon';if(preview)icon.append(seasonalImage(preview,seasonalIconIndex(preview)));else{const scenery=document.createElement('img');scenery.src=new URL('../assets/branding/lakeside-garden.webp',import.meta.url).href;scenery.alt='';scenery.draggable=false;scenery.className='default-scenery-preview';icon.append(scenery);}icon.setAttribute('aria-hidden','true');
+  const mini=document.createElement('span');mini.className='seasonal-mini';mini.setAttribute('aria-hidden','true');if(preview)mini.append(seasonalImage(preview,0));else mini.append(standardArt(34));
+  const caption=document.createElement('span');caption.className='seasonal-next-label';const heading=document.createElement('small');heading.textContent='For the next puzzle';const mode=document.createElement('strong');mode.textContent=`Switch to ${targetMode}${preview?` · ${preview.name}`:''}`;caption.append(heading,mode);toggle.append(icon,mini,caption);
   if(activeSeason){for(const [key,value] of Object.entries({'--season-bg':activeSeason.bg,'--season-accent':activeSeason.accent,'--season-tile':activeSeason.tint,'--season-image':seasonalBackground(activeSeason)}))document.body.style.setProperty(key,value);}
   for(const key of ['seasonalMode','seasonalBackground','seasonalTiles','seasonalMusic'])$(key).checked=s[key];
   audio.sync();
@@ -88,7 +90,7 @@ function renderTilePreview(){
   for(const blocked of [false,true]){
     const tile=document.createElement('div');tile.className=`tile${blocked?' blocked':''}`;
     const sample=game().photos[0];
-    if(sample||!blocked){const image=document.createElement('img');image.className='tile-photo';image.src=sample?.variants[0].src||'./assets/branding/emblem.webp';image.alt='';tile.append(image);}
+    if(sample||!blocked){const image=document.createElement('img');image.className='tile-photo';image.src=sample?.variants[0].src||'./assets/branding/emblem-v2.webp';image.alt='';tile.append(image);}
     else tile.append(faceArt(0));
     const caption=document.createElement('span');caption.className='tile-caption';caption.textContent=sample?.name||(!blocked?'Photo name':activeSeason&&seasonSkin().seasonalTiles?seasonalFace(activeSeason,0).name:'Dots 1');tile.append(caption);area.append(tile);
   }
@@ -151,7 +153,7 @@ function render(message = '', {appearanceOnly=false}={}) {
     button.setAttribute('aria-label', `${faceDown?'Hidden tile':tileName(tile)}, ${free ? 'available' : 'blocked'}, row ${tile.y + 1}, column ${tile.x + 1}, layer ${tile.z + 1}`);
     button.setAttribute('aria-pressed', String(selected === tile.id));
     button.title = `${faceDown?'Hidden tile':tileName(tile)} · ${free ? 'Available' : 'Blocked'}`;
-    if(faceDown){const back=document.createElement('img');back.className='tile-back';back.src='./assets/branding/emblem.webp';back.alt='';button.append(back);}
+    if(faceDown){const back=document.createElement('img');back.className='tile-back';back.src='./assets/branding/emblem-v2.webp';back.alt='';button.append(back);}
     else if (tile.face >= 10) button.append(faceArt(tile.face - 10));
     else {
       const photo = game().photos[tile.face], variant = photo.variants[tile.variant || 0] || photo.variants[0];
@@ -658,7 +660,7 @@ function bind() {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') { event.preventDefault(); undo(); }
   });
   $('settings-dialog').addEventListener('close',()=>renderTilePreview());
-  $('splash-start').onclick=()=>{close('splash-dialog');lastTick=performance.now();audio.sync();};
+  $('splash-dialog').onclick=()=>{close('splash-dialog');lastTick=performance.now();audio.sync();};
   $('splash-dialog').addEventListener('cancel',event=>{event.preventDefault();close('splash-dialog');lastTick=performance.now();});
   document.addEventListener('pointerdown', () => { audio.sync(); }, { once: true });
   document.addEventListener('visibilitychange', () => { lastTick = performance.now(); if (document.hidden) { audio.pause(); save(true); } else audio.sync(); });

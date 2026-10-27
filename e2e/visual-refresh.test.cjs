@@ -1,0 +1,25 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs/promises'),path=require('node:path'),os=require('node:os');
+const {_electron:electron}=require('@playwright/test'),root=path.resolve(__dirname,'..');
+test('action preview, illustrated welcome, default scenery and drag selection work at desktop and narrow sizes',{timeout:90000},async t=>{
+ const dir=await fs.mkdtemp(path.join(os.tmpdir(),'myjong-visual-refresh-'));
+ const {makeGame,defaults,emptyStats}=await import('../src/game.js'),{normalizeSeasonal}=await import('../src/seasonal.js');
+ const settings=normalizeSeasonal({...defaults,seasonalMode:false,collection:'traditional'}),library={version:1,photos:[],subjects:[]};
+ await fs.writeFile(path.join(dir,'state.json'),JSON.stringify({version:2,settings,stats:emptyStats(),game:makeGame(settings,library)}));await fs.writeFile(path.join(dir,'library.json'),JSON.stringify(library));
+ const app=await electron.launch({...process.env.MYJONG_TEST_PACKAGE==='1'?{executablePath:path.join(root,'dist/win-unpacked/MYjong.exe'),args:[]}:{args:[root]},env:{...process.env,MYJONG_TEST_DATA:dir,MYJONG_SMOKE:'1'}});
+ t.after(async()=>{await app.close();await fs.rm(dir,{recursive:true,force:true});});
+ const page=await app.firstWindow();page.setDefaultTimeout(20000);await page.emulateMedia({reducedMotion:'reduce'});await page.waitForSelector('#splash-dialog[open]');
+ await page.evaluate(async()=>{for(const file of ['welcome-garden.webp','lakeside-garden.webp','emblem-v2.webp']){const img=new Image();img.src=new URL('./assets/branding/'+file,location.href).href;await img.decode();}});
+ const shots=path.join(root,'Screenshots/visual-refresh',String(Date.now()));await fs.mkdir(shots,{recursive:true});await page.screenshot({path:path.join(shots,'welcome-desktop.png')});
+ await page.locator('#splash-start').click();await page.waitForFunction(()=>document.querySelector('#board').getAttribute('aria-busy')==='false');
+ const toggle=page.locator('#seasonal-toggle');assert.match(await toggle.innerText(),/Switch to Seasonal/);assert.equal(await toggle.getAttribute('data-target-mode'),'seasonal');
+ assert.ok(await page.locator('#board-space').evaluate(el=>getComputedStyle(el).backgroundImage.includes('lakeside-garden.webp')));
+ await toggle.click();assert.match(await toggle.innerText(),/Switch to Default/);assert.equal(await page.locator('body').getAttribute('data-season'),'');
+ await page.locator('#new').click();assert.equal(await page.locator('#puzzleTheme').inputValue(),'seasonal');await page.locator('#new-dialog [data-close]').first().click();await toggle.click();
+ await page.evaluate(()=>window.getSelection().removeAllRanges());const tile=await page.locator('#board .tile').first().boundingBox(),board=await page.locator('#board-space').boundingBox();
+ await page.mouse.move(tile.x+tile.width/2,tile.y+tile.height/2);await page.mouse.down();await page.mouse.move(board.x+board.width-25,board.y+board.height-25,{steps:18});await page.mouse.up();
+ assert.equal(await page.evaluate(()=>window.getSelection().toString()),'');assert.equal(await page.locator('#board .tile').first().evaluate(el=>getComputedStyle(el).userSelect),'none');
+ await page.screenshot({path:path.join(shots,'default-desktop.png')});
+ await page.setViewportSize({width:640,height:900});await page.screenshot({path:path.join(shots,'default-narrow.png')});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+ await page.reload();await page.waitForSelector('#splash-dialog[open]');await page.screenshot({path:path.join(shots,'welcome-narrow.png')});await page.keyboard.press('x');assert.equal(await page.locator('#splash-dialog').isVisible(),false);
+ await fs.writeFile(path.join(root,'test-results/latest-visual-refresh.txt'),shots);console.log('Visual review:',shots);
+});

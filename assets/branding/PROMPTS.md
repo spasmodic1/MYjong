@@ -15,3 +15,7 @@ Reference: `icon-master.png`.
 ## Garden frame prompt
 
 Use case: stylized-concept. Asset type: final wide botanical border artwork for the MYjong mahjong solitaire desktop game's playing surface. Make an original premium illustrated frame with hand-painted deep jade leaves, soft ivory blossoms and delicate warm-gold engraved stems, tactile enamel and watercolor-paper character. Composition is wide landscape, approximately 3:2: decorated corners and narrow edge clusters ONLY, particularly lower corners, with the central 80 percent entirely transparent and uncluttered so a mahjong board can sit there. Graceful asymmetry, a few fine curling gold lines, restrained dimensional details matching a luxury ivory-and-jade board-game identity. Sparse enough to remain calm behind large readable game tiles; no straight box border, no characters, no tiles, no text, no logo, no watermark. Genuine alpha transparency throughout the large center and between leaves, no painted opaque backdrop, no solid rectangle. This is a usable production UI asset, not a mockup or screenshot.
+
+## Garden refresh and rabbit icon (0.9.13)
+
+The active icon master is now `icon-master-v2.png`. Header, welcome and memory backs use `emblem-v2.webp`; the header wordmark is accessible typography. Garden and welcome scenes use `lakeside-garden.webp` and `welcome-garden.webp`. Full built-in image generation prompts and saved paths: [visual refresh notes](../../docs/artwork/visual-refresh.md). Earlier assets remain available for source history.

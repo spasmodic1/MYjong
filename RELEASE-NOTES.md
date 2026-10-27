@@ -1,3 +1,13 @@
+MYjong 0.9.13 refreshes the garden and makes the theme action clear.
+
+- The toolbar now previews the destination of a click: Switch to Default or Switch to Seasonal. New Game continues to show the theme actually selected for the next puzzle.
+- Dragging across the board no longer selects tile artwork or captions.
+- Default backgrounds now feature an illustrated lakeside garden, softly lit pavilion, botanical edges and a quiet center, with color treatments for the existing presets.
+- Refreshed panels, buttons and typography, an illustrated full-screen welcome, and a new red rabbit mahjong tile game icon.
+- Seasonal scenery, puzzle snapshots, saved games, photos and the recorded-instrument soundtrack remain supported.
+
+Use Settings → Check for Updates, or install MYjong-Setup-0.9.13.exe.
+
 MYjong 0.9.12 adds recorded instruments and recurring seasonal red rabbits.
 
 - All eleven music tracks now use recorded grand piano, concert harp, glockenspiel, bowed glass and sleigh bells, with richer stereo room ambience. Everything remains bundled for offline playback.

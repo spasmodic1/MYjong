@@ -18,6 +18,7 @@ for(let i=0;i<35;i++)assert.ok(files.includes(`/assets/tiles/traditional/${i}.we
 for(const rabbit of ['snow','valentine','patrick','easter','spring','summer','july','school'])assert.ok(files.includes(`/assets/seasonal/rabbits/${rabbit}.webp`),'reviewed rabbit must be bundled');
 assert.ok(files.includes('/assets/licenses/VCSL-CC0.txt'));assert.ok(files.includes('/assets/music/sample-provenance.json'));
 assert.ok(!files.some(f=>/music-samples|\.wav$/i.test(f)),'raw sample build inputs must not ship');
+for(const file of ['assets/branding/lakeside-garden.webp','assets/branding/welcome-garden.webp','assets/branding/emblem-v2.webp','assets/icon.png','assets/icon.ico']){assert.ok(files.includes('/'+file),'refreshed artwork must be bundled');assert.ok(asar.extractFile(archive,path.join(...file.split('/')).toString()).equals(await fs.readFile(path.resolve(__dirname,'..',file))),'packaged artwork must match source');}
 const zip=await JSZip.loadAsync(asar.extractFile(archive,'assets/starter-collection.zip'));
 assert.equal(zip.file('state.json'),null,'starter photos must not override current game defaults');
 const library=JSON.parse(await zip.file('library.json').async('string'));
