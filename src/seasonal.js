@@ -35,8 +35,10 @@ export function currentSeason(s,date=new Date()){
 }
 // One matching identity per illustration. No numbered variants.
 export const seasonalIndices=[0,8,2,10,4,12,6];
-export function seasonalFace(season,index){return {...season.faces[index%7]};}
-export const usesSeasonalFace=(settings,index)=>settings.seasonalTiles&&(settings.seasonalFaceMix==='all'||seasonalIndices.includes(index));
+export const seasonalPictureIndices=[...seasonalIndices,34];
+export const seasonalRabbits={snow:'snow',valentine:'valentine',patrick:'patrick',easter:'easter',spring:'spring',summer:'summer',july:'july',school:'school',earth:'spring','summer-nights':'summer',solstice:'snow'};
+export function seasonalFace(season,index){return index===34?{symbol:'🐇',name:'Red rabbit'}:{...season.faces[index%7]};}
+export const usesSeasonalFace=(settings,index)=>settings.seasonalTiles&&(settings.seasonalFaceMix==='all'||seasonalPictureIndices.includes(index));
 export function seasonalSnapshot(settings,date=new Date()){
  const s=normalizeSeasonal({...settings}),theme=currentSeason(s,date);
  return {theme:theme?.id||null,tiles:Boolean(theme&&s.seasonalTiles),background:Boolean(theme&&s.seasonalBackground),mix:s.seasonalFaceMix,finish:true};
@@ -78,7 +80,7 @@ export function seasonalMusicTrack(settings,date=new Date()){
  return season?seasonalTracks[season.id]||null:null;
 }
 
-export const seasonalImageUrl=(season,index)=>new URL(`../assets/seasonal/tiles/${season.id}/${index%7}.webp`,import.meta.url).href;
+export const seasonalImageUrl=(season,index)=>new URL(index===34?(seasonalRabbits[season.id]?`../assets/seasonal/rabbits/${seasonalRabbits[season.id]}.webp`:'../assets/tiles/traditional/34.webp'):`../assets/seasonal/tiles/${season.id}/${index%7}.webp`,import.meta.url).href;
 export const seasonalIconIndex=season=>({valentine:6,easter:1,spring:1,july:1,school:1,halloween:1,christmas:2}[season.id]||0);
 export function seasonalImage(season,index=0){
  const image=document.createElement('img');image.className='seasonal-illustration';

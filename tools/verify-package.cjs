@@ -15,6 +15,9 @@ for(const track of ['garden','river','moonlight','sunroom','starlight','welcome'
 for(const theme of (await import('../src/seasonal.js')).seasons)assert.ok(files.includes(`/assets/seasonal/${theme.id}.webp`),'seasonal scene must be bundled');
 for(const theme of (await import('../src/seasonal.js')).seasons)for(let i=0;i<7;i++)assert.ok(files.includes(`/assets/seasonal/tiles/${theme.id}/${i}.webp`),'painted seasonal face must be bundled');
 for(let i=0;i<35;i++)assert.ok(files.includes(`/assets/tiles/traditional/${i}.webp`),'painted traditional face must be bundled');
+for(const rabbit of ['snow','valentine','patrick','easter','spring','summer','july','school'])assert.ok(files.includes(`/assets/seasonal/rabbits/${rabbit}.webp`),'reviewed rabbit must be bundled');
+assert.ok(files.includes('/assets/licenses/VCSL-CC0.txt'));assert.ok(files.includes('/assets/music/sample-provenance.json'));
+assert.ok(!files.some(f=>/music-samples|\.wav$/i.test(f)),'raw sample build inputs must not ship');
 const zip=await JSZip.loadAsync(asar.extractFile(archive,'assets/starter-collection.zip'));
 assert.equal(zip.file('state.json'),null,'starter photos must not override current game defaults');
 const library=JSON.parse(await zip.file('library.json').async('string'));

@@ -1,79 +1,101 @@
 {
   "garden": {
     "seconds": 98.46153846153847,
-    "peak": 0.5520406044727408,
-    "rms": 0.10499999999999998,
-    "loopStep": 0.028972460692883218,
-    "bpm": 78
+    "peak": 0.7135443694442619,
+    "rms": 0.105,
+    "loopStep": 0,
+    "bpm": 78,
+    "renderer": "VCSL recorded instruments",
+    "sampleRate": 44100
   },
   "river": {
     "seconds": 81.70212765957447,
-    "peak": 0.47884538378992647,
-    "rms": 0.105,
-    "loopStep": 0.002824021632522355,
-    "bpm": 94
+    "peak": 0.7199999999999999,
+    "rms": 0.09326577437607346,
+    "loopStep": 0,
+    "bpm": 94,
+    "renderer": "VCSL recorded instruments",
+    "sampleRate": 44100
   },
   "moonlight": {
     "seconds": 116.36363636363636,
-    "peak": 0.5347173112504763,
-    "rms": 0.105,
-    "loopStep": 0.01006416611538564,
-    "bpm": 66
+    "peak": 0.7200000000000001,
+    "rms": 0.0817637146320704,
+    "loopStep": 0,
+    "bpm": 66,
+    "renderer": "VCSL recorded instruments",
+    "sampleRate": 44100
   },
   "sunroom": {
     "seconds": 83.47826086956522,
-    "peak": 0.4938606261035071,
-    "rms": 0.105,
-    "loopStep": 0.01700316274592099,
-    "bpm": 92
+    "peak": 0.72,
+    "rms": 0.10001387416120998,
+    "loopStep": 0,
+    "bpm": 92,
+    "renderer": "VCSL recorded instruments",
+    "sampleRate": 44100
   },
   "starlight": {
     "seconds": 106.66666666666667,
-    "peak": 0.5215981479199234,
-    "rms": 0.105,
-    "loopStep": 0.010234035713775706,
-    "bpm": 72
+    "peak": 0.72,
+    "rms": 0.08616100818345615,
+    "loopStep": 0,
+    "bpm": 72,
+    "renderer": "VCSL recorded instruments",
+    "sampleRate": 44100
   },
   "welcome": {
     "seconds": 109.71428571428571,
-    "peak": 0.5217878026675843,
+    "peak": 0.6513087588398354,
     "rms": 0.085,
-    "loopStep": 0.003623266533478705,
-    "bpm": 70
+    "loopStep": 0,
+    "bpm": 70,
+    "renderer": "VCSL recorded instruments",
+    "sampleRate": 44100
   },
   "snowfall": {
     "seconds": 109.71428571428571,
-    "peak": 0.5177965979263686,
-    "rms": 0.105,
-    "loopStep": 0.004398746493964336,
-    "bpm": 70
+    "peak": 0.72,
+    "rms": 0.08559033943981527,
+    "loopStep": 0,
+    "bpm": 70,
+    "renderer": "VCSL recorded instruments",
+    "sampleRate": 44100
   },
   "christmas-bells": {
     "seconds": 71.11111111111111,
-    "peak": 0.49603784347460983,
-    "rms": 0.10500000000000001,
-    "loopStep": 0.005657100542416858,
-    "bpm": 108
+    "peak": 0.72,
+    "rms": 0.1029833179010536,
+    "loopStep": 0,
+    "bpm": 108,
+    "renderer": "VCSL recorded instruments",
+    "sampleRate": 44100
   },
   "halloween-waltz": {
     "seconds": 93.65853658536585,
-    "peak": 0.45288946139243996,
-    "rms": 0.10499999999999998,
-    "loopStep": 0.0054577668600131555,
-    "bpm": 82
+    "peak": 0.72,
+    "rms": 0.08522040653948228,
+    "loopStep": 0,
+    "bpm": 82,
+    "renderer": "VCSL recorded instruments",
+    "sampleRate": 44100
   },
   "candlelight": {
     "seconds": 101.05263157894737,
-    "peak": 0.47837687611831936,
-    "rms": 0.105,
-    "loopStep": 0.03298956668204617,
-    "bpm": 76
+    "peak": 0.72,
+    "rms": 0.08694138707912087,
+    "loopStep": 0,
+    "bpm": 76,
+    "renderer": "VCSL recorded instruments",
+    "sampleRate": 44100
   },
   "spring-bloom": {
     "seconds": 87.27272727272727,
-    "peak": 0.471721191780818,
-    "rms": 0.10500000000000001,
-    "loopStep": 0.03538729269604868,
-    "bpm": 88
+    "peak": 0.72,
+    "rms": 0.09037403151546096,
+    "loopStep": 0,
+    "bpm": 88,
+    "renderer": "VCSL recorded instruments",
+    "sampleRate": 44100
   }
 }

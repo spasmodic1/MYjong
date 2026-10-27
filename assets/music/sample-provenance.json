@@ -1,0 +1,211 @@
+{
+  "library": "Versilian Community Sample Library",
+  "url": "https://github.com/sgossner/VCSL",
+  "license": "CC0-1.0",
+  "revision": "c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e",
+  "samples": [
+    {
+      "instrument": "piano",
+      "midi": 36,
+      "path": "Chordophones/Zithers/Grand Piano, Kawai/Sustains/GPiano_sus_C1_v2_rr1_Player.wav",
+      "file": "GPiano_sus_C1_v2_rr1_Player.wav",
+      "sha256": "91ab158f01071f29375bb7593304dbb54e240f0db07374fe1fc630ca1b573b82"
+    },
+    {
+      "instrument": "piano",
+      "midi": 42,
+      "path": "Chordophones/Zithers/Grand Piano, Kawai/Sustains/GPiano_sus_F#1_v2_rr1_Player.wav",
+      "file": "GPiano_sus_F#1_v2_rr1_Player.wav",
+      "sha256": "c26ac28fca64b6aaa3e2733673e9217ca378652999e2621cabbb1bcb53254500"
+    },
+    {
+      "instrument": "piano",
+      "midi": 48,
+      "path": "Chordophones/Zithers/Grand Piano, Kawai/Sustains/GPiano_sus_C2_v2_rr1_Player.wav",
+      "file": "GPiano_sus_C2_v2_rr1_Player.wav",
+      "sha256": "00838dbdbcb0dffd02529c38fa84bc514931634b485fc2ad6ecc62fe98d27a62"
+    },
+    {
+      "instrument": "piano",
+      "midi": 54,
+      "path": "Chordophones/Zithers/Grand Piano, Kawai/Sustains/GPiano_sus_F#2_v2_rr1_Player.wav",
+      "file": "GPiano_sus_F#2_v2_rr1_Player.wav",
+      "sha256": "45be0b87b88a6789550f849da90c2b085bd7976e183850f5f359bbc843c41d64"
+    },
+    {
+      "instrument": "piano",
+      "midi": 60,
+      "path": "Chordophones/Zithers/Grand Piano, Kawai/Sustains/GPiano_sus_C3_v2_rr1_Player.wav",
+      "file": "GPiano_sus_C3_v2_rr1_Player.wav",
+      "sha256": "fce33012fe900309abafd1a4d6d254d142b0cbf33834c7a72c2fd1ada4e746e1"
+    },
+    {
+      "instrument": "piano",
+      "midi": 66,
+      "path": "Chordophones/Zithers/Grand Piano, Kawai/Sustains/GPiano_sus_F#3_v2_rr1_Player.wav",
+      "file": "GPiano_sus_F#3_v2_rr1_Player.wav",
+      "sha256": "85d36c877c730b1a20ac487c598475cf9d50d2a710abef19ab1d9f45ab4c3cae"
+    },
+    {
+      "instrument": "piano",
+      "midi": 72,
+      "path": "Chordophones/Zithers/Grand Piano, Kawai/Sustains/GPiano_sus_C4_v2_rr1_Player.wav",
+      "file": "GPiano_sus_C4_v2_rr1_Player.wav",
+      "sha256": "69845de40a38ed6501746520f9f385ae56200a4372faed48178e64a32a75e58c"
+    },
+    {
+      "instrument": "piano",
+      "midi": 78,
+      "path": "Chordophones/Zithers/Grand Piano, Kawai/Sustains/GPiano_sus_F#4_v2_rr1_Player.wav",
+      "file": "GPiano_sus_F#4_v2_rr1_Player.wav",
+      "sha256": "e2a6b1ca1b0919cf04fd3023004f352b588f471ff68543ac546726c134659cb8"
+    },
+    {
+      "instrument": "piano",
+      "midi": 84,
+      "path": "Chordophones/Zithers/Grand Piano, Kawai/Sustains/GPiano_sus_C5_v2_rr1_Player.wav",
+      "file": "GPiano_sus_C5_v2_rr1_Player.wav",
+      "sha256": "f56e64651eed9bdc88abb53eff3beb9a6e89d787f29fef7758f04b6da09397c9"
+    },
+    {
+      "instrument": "piano",
+      "midi": 90,
+      "path": "Chordophones/Zithers/Grand Piano, Kawai/Sustains/GPiano_sus_F#5_v2_rr1_Player.wav",
+      "file": "GPiano_sus_F#5_v2_rr1_Player.wav",
+      "sha256": "12235267e757ee9ced77756cb705ca1dfbdeba42a4996e7a88c5a0e81843b038"
+    },
+    {
+      "instrument": "piano",
+      "midi": 96,
+      "path": "Chordophones/Zithers/Grand Piano, Kawai/Sustains/GPiano_sus_C6_v2_rr1_Player.wav",
+      "file": "GPiano_sus_C6_v2_rr1_Player.wav",
+      "sha256": "25464db09fe4a25cac979c507fef3efd507cc43369761f9e27488330e6e2a264"
+    },
+    {
+      "instrument": "harp",
+      "midi": 48,
+      "path": "Chordophones/Composite Chordophones/Concert Harp/KSHarp_C3_mf3.wav",
+      "file": "KSHarp_C3_mf3.wav",
+      "sha256": "18e6222e8fc11a8106e8d7a875d208835eb5b45598f010b21c786b1482e09869"
+    },
+    {
+      "instrument": "harp",
+      "midi": 52,
+      "path": "Chordophones/Composite Chordophones/Concert Harp/KSHarp_E3_mf1.wav",
+      "file": "KSHarp_E3_mf1.wav",
+      "sha256": "aafa9d41ec0f77da8f2891055af8b3f9557e0ba1f1df93d53ae6e1fda07afae5"
+    },
+    {
+      "instrument": "harp",
+      "midi": 55,
+      "path": "Chordophones/Composite Chordophones/Concert Harp/KSHarp_G3_mf1.wav",
+      "file": "KSHarp_G3_mf1.wav",
+      "sha256": "62600eb1b37bc2829ca65351f7ca7e506c9ae472abd5bea0765a8b8fa7df2772"
+    },
+    {
+      "instrument": "harp",
+      "midi": 59,
+      "path": "Chordophones/Composite Chordophones/Concert Harp/KSHarp_B3_mf1.wav",
+      "file": "KSHarp_B3_mf1.wav",
+      "sha256": "f6f71be8c640822ef48a448b245585659acdfcc7ed5774e10f37be2fc02fcab4"
+    },
+    {
+      "instrument": "harp",
+      "midi": 62,
+      "path": "Chordophones/Composite Chordophones/Concert Harp/KSHarp_D4_mf1.wav",
+      "file": "KSHarp_D4_mf1.wav",
+      "sha256": "ebfde8aab4411019e37e3426f4dd88d6a52a38c2d0261d7f10ec63d8ff584dc7"
+    },
+    {
+      "instrument": "harp",
+      "midi": 65,
+      "path": "Chordophones/Composite Chordophones/Concert Harp/KSHarp_F4_mf1.wav",
+      "file": "KSHarp_F4_mf1.wav",
+      "sha256": "db27ebbb37334c10e06f2ae63f4d9ff555e4d11704fcc6f0bcf503863867e577"
+    },
+    {
+      "instrument": "harp",
+      "midi": 69,
+      "path": "Chordophones/Composite Chordophones/Concert Harp/KSHarp_A4_mf1.wav",
+      "file": "KSHarp_A4_mf1.wav",
+      "sha256": "3665f3975cad4a33f46784aa4f896f4b4319ba2b7831e892d975bc38c9f09f23"
+    },
+    {
+      "instrument": "harp",
+      "midi": 72,
+      "path": "Chordophones/Composite Chordophones/Concert Harp/KSHarp_C5_mf1.wav",
+      "file": "KSHarp_C5_mf1.wav",
+      "sha256": "7c8b862f6fd3f1442ed87537af976d84bda8c05a5b4900e8907d570b5202a517"
+    },
+    {
+      "instrument": "harp",
+      "midi": 76,
+      "path": "Chordophones/Composite Chordophones/Concert Harp/KSHarp_E5_mf1.wav",
+      "file": "KSHarp_E5_mf1.wav",
+      "sha256": "95dd9ddb0bd15bee7687906e00f25aafcaa43020cc9501f0e8b6cabf0e9a53ec"
+    },
+    {
+      "instrument": "harp",
+      "midi": 79,
+      "path": "Chordophones/Composite Chordophones/Concert Harp/KSHarp_G5_mf1.wav",
+      "file": "KSHarp_G5_mf1.wav",
+      "sha256": "f2004dfc617997fbabc6f849add2af06f4f859361c44a8fca0f993dc7f999540"
+    },
+    {
+      "instrument": "bell",
+      "midi": 79,
+      "path": "Idiophones/Struck Idiophones/Glockenspiel/glock_medium_G4_01.wav",
+      "file": "glock_medium_G4_01.wav",
+      "sha256": "6c4649b13e24fa01e4634edad8fe8edf18aef33facc5d49fe53097b376bac4da"
+    },
+    {
+      "instrument": "bell",
+      "midi": 84,
+      "path": "Idiophones/Struck Idiophones/Glockenspiel/glock_medium_C5_01.wav",
+      "file": "glock_medium_C5_01.wav",
+      "sha256": "635f898e0bcb6975b96b18efd9c896f6f1b97ff12174a339ada4814e49675660"
+    },
+    {
+      "instrument": "bell",
+      "midi": 91,
+      "path": "Idiophones/Struck Idiophones/Glockenspiel/glock_medium_G5_01.wav",
+      "file": "glock_medium_G5_01.wav",
+      "sha256": "7045c0ef7260e2f1ad11a64406cf7575ed898d1207a91104d33d78caefac63e4"
+    },
+    {
+      "instrument": "bell",
+      "midi": 96,
+      "path": "Idiophones/Struck Idiophones/Glockenspiel/glock_medium_C6_01.wav",
+      "file": "glock_medium_C6_01.wav",
+      "sha256": "e942cbf502cf6731df2925945fe3234c876cb63f047d91007b6929887f9e4904"
+    },
+    {
+      "instrument": "pad",
+      "midi": 75,
+      "path": "Idiophones/Friction Idiophones/Wine Glasses/Sustains/Fast/glass1_D#4_Fast_1_main.wav",
+      "file": "glass1_D#4_Fast_1_main.wav",
+      "sha256": "689b0794c3ea57825e51ddac092ccfa087814c142f88ec20764681b5997a1ba3"
+    },
+    {
+      "instrument": "pad",
+      "midi": 78,
+      "path": "Idiophones/Friction Idiophones/Wine Glasses/Sustains/Fast/glass2_F#4_Fast_1_Main.wav",
+      "file": "glass2_F#4_Fast_1_Main.wav",
+      "sha256": "560c2ec792a26a329bf29b17114f41cd7663b2b4a75db6f4d2a9fd145a087638"
+    },
+    {
+      "instrument": "pad",
+      "midi": 82,
+      "path": "Idiophones/Friction Idiophones/Wine Glasses/Sustains/Fast/glass3_A#4_Fast_1_Main.wav",
+      "file": "glass3_A#4_Fast_1_Main.wav",
+      "sha256": "1294cd4c0a5095a3845f344069b8781bf80fcf8b2c6647f65af3b262cf8cb17e"
+    },
+    {
+      "instrument": "sleigh",
+      "midi": 60,
+      "path": "Idiophones/Struck Idiophones/Sleigh Bells/Sleighbells_Hit_rr1_Mid.wav",
+      "file": "Sleighbells_Hit_rr1_Mid.wav",
+      "sha256": "cc424c298ac98a783ebf37ce6f2152a19b227ff89c5c20bc2462ddc8261fefc5"
+    }
+  ]
+}

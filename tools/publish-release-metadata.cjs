@@ -14,8 +14,13 @@ async function publishMetadata(directory='dist',token=process.env.GH_TOKEN||proc
  const request=async(url,options={})=>{const response=await fetch(url,{...options,headers:{...headers,...options.headers}});if(!response.ok)throw Error(`GitHub release metadata request failed: HTTP ${response.status}`);return response;};
  if(releaseId!==null&&(!Number.isSafeInteger(releaseId)||releaseId<=0))throw Error('Invalid release ID');
  const locator=releaseId===null?`tags/v${pkg.version}`:String(releaseId);
- const release=await (await request(`https://api.github.com/repos/${feed.owner}/${feed.repo}/releases/${locator}`)).json();
- const installer=release.assets.find(a=>a.name===local.name&&a.state==='uploaded');
+ let release,installer;
+ for(let attempt=0;attempt<12;attempt++){
+  release=await (await request(`https://api.github.com/repos/${feed.owner}/${feed.repo}/releases/${locator}?refresh=${Date.now()}`,{headers:{'Cache-Control':'no-cache'}})).json();
+  installer=release.assets.find(a=>a.name===local.name&&a.state==='uploaded');
+  if(installer)break;
+  if(attempt<11)await new Promise(resolve=>setTimeout(resolve,2000));
+ }
  if(!installer||installer.size!==local.size)throw Error('Published installer is missing or differs in size');
  const remoteDigest=installer.digest||`sha256:${hash(Buffer.from(await (await request(installer.url,{headers:{Accept:'application/octet-stream'}})).arrayBuffer()))}`;
  if(remoteDigest!==`sha256:${local.sha256}`)throw Error('Published installer differs from this build; refusing mismatched update metadata');

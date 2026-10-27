@@ -29,12 +29,14 @@ test('personalization previews, plays each tune and preserves choices and puzzle
   }
   assert.equal(gradients.size,5);
   await page.locator('#music').check();
-  for(const track of ['garden','river','moonlight','sunroom','starlight','welcome']){
+  for(const track of ['garden','river','moonlight','sunroom','starlight','welcome','snowfall','christmas-bells','halloween-waltz','candlelight','spring-bloom']){
     await page.locator('#menuMusicTrack').selectOption(track);
     await page.waitForFunction(track=>window.testPlayers.some(p=>p.src.endsWith('/'+track+'.ogg')&&!p.paused&&p.readyState>=2&&p.duration>60),track).catch(async error=>{
       console.log('Track playback check:',track,await page.evaluate(()=>window.testPlayers.map(p=>({src:p.src,paused:p.paused,ready:p.readyState,duration:p.duration,error:p.error?.message}))));throw error;
     });
   }
+  await page.locator('#menuMusicTrack').selectOption('welcome');
+  await page.waitForFunction(()=>window.testPlayers.some(p=>p.src.endsWith('/welcome.ogg')&&!p.paused));
   await page.evaluate(()=>{const p=window.testPlayers.find(p=>p.src.endsWith('/welcome.ogg'));p.currentTime=p.duration-.25;});
   await page.waitForFunction(()=>window.testPlayers.some(p=>p.src.endsWith('/welcome.ogg')&&!p.paused&&p.currentTime<1),null,{timeout:5000});
   await page.locator('#musicTrack').selectOption('starlight');

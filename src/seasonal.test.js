@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {seasons,normalizeSeasonal,currentSeason,seasonalFace,seasonalBackground,seasonalMusicTrack,usesSeasonalFace,seasonalIndices,migrateSeasonalGame} from './seasonal.js';
+import {seasons,normalizeSeasonal,currentSeason,seasonalFace,seasonalBackground,seasonalMusicTrack,usesSeasonalFace,seasonalIndices,seasonalPictureIndices,migrateSeasonalGame} from './seasonal.js';
 import {existsSync} from 'node:fs';
 import {makeGame,defaults,emptyStats,validState,reshuffle} from './game.js';
 import {pairs} from './rules.js';
@@ -33,19 +33,19 @@ test('older settings migrate and invalid seasonal preferences are repaired',()=>
 });
 test('mixed faces are deterministic by identity and all-seasonal remains available',()=>{
  const s=normalizeSeasonal({});assert.equal(s.seasonalFaceMix,'mixed');
- assert.equal(Array.from({length:35},(_,i)=>usesSeasonalFace(s,i)).filter(Boolean).length,7);
- for(let i=0;i<35;i++)assert.equal(usesSeasonalFace(s,i),seasonalIndices.includes(i));
+ assert.equal(Array.from({length:35},(_,i)=>usesSeasonalFace(s,i)).filter(Boolean).length,8);
+ for(let i=0;i<35;i++)assert.equal(usesSeasonalFace(s,i),seasonalPictureIndices.includes(i));
  s.seasonalFaceMix='all';assert.ok(Array.from({length:35},(_,i)=>usesSeasonalFace(s,i)).every(Boolean));
  s.seasonalTiles=false;assert.ok(Array.from({length:35},(_,i)=>usesSeasonalFace(s,i)).every(v=>!v));
 });
 test('new puzzles use unique picture identities and keep their theme when future preferences change',()=>{
  const settings=normalizeSeasonal({...defaults,collection:'traditional',difficulty:3,seasonalFaceMix:'all'}),library={photos:[],subjects:[]};
  const game=makeGame(settings,library),faces=[...new Set(game.tiles.map(t=>t.face))];
- assert.equal(faces.length,7);assert.equal(new Set(faces.map(f=>seasonalFace(seasons[0],f-10).name)).size,7);
+ assert.equal(faces.length,8);assert.equal(new Set(faces.map(f=>seasonalFace(seasons[0],f-10).name)).size,8);
  const skin=structuredClone(game.seasonal);settings.seasonalMode=false;settings.seasonalFaceMix='mixed';assert.deepEqual(game.seasonal,skin);
  const next=makeGame(settings,library);assert.equal(next.seasonal.theme,null);assert.equal(new Set(next.tiles.map(t=>t.face)).size,35);
  settings.seasonalMode=true;const mixed=makeGame(settings,library);const distinct=[...new Set(mixed.tiles.map(t=>t.face))];
- assert.equal(distinct.filter(f=>usesSeasonalFace(settings,f-10)).length,7);assert.equal(distinct.length,14);
+ assert.equal(distinct.filter(f=>usesSeasonalFace(settings,f-10)).length,8);assert.equal(distinct.length,15);
 });
 test('numbered saves migrate matching identities together with undo and shuffle history',()=>{
  const settings=normalizeSeasonal({...defaults,collection:'traditional',difficulty:3,seasonalFaceMix:'all'}),game=makeGame({...settings,seasonalMode:false},{photos:[],subjects:[]});delete game.seasonal;
@@ -60,4 +60,16 @@ test('migration repairs mixed race arrivals that now share a single picture',()=
  game.tiles=Array.from({length:6},(_,id)=>({id,x:id%2*3+1,y:Math.floor(id/2),z:0,face:10+Math.floor(id/2)*14,removed:id<2}));game.initialSolution=[[0,1],[2,3],[4,5]];game.history=[{type:'match',ids:[0,1]}];
  assert.equal(addRacePair(game,()=>.4).length,2);assert.equal(game.history.at(-1).mixed,true);
  const state={version:2,settings,stats:emptyStats(),game};assert.equal(validState(state),true);migrateSeasonalGame(game,settings);assert.equal(game.history.at(-1).mixed,undefined);assert.equal(validState(state),true);
+});
+
+test('seasonal puzzles always include a separate red rabbit pair without replacing holiday pictures',()=>{
+ const settings=normalizeSeasonal({...defaults,collection:'traditional',difficulty:1});
+ for(const season of seasons){
+  settings.seasonalEnabled=[season.id];settings.seasonalPreferred={[new Date().getMonth()]:season.id};
+  // Inspect every theme's independent rabbit identity and bundled artwork.
+  assert.equal(seasonalFace(season,34).name,'Red rabbit');
+ }
+ settings.seasonalEnabled=seasons.map(s=>s.id);
+ const seasonal=makeGame(settings,{photos:[],subjects:[]});
+ assert.ok(seasonal.tiles.filter(t=>t.face===44).length>=2);
 });

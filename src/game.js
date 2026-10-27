@@ -3,7 +3,7 @@ import { deal, isFree } from './rules.js';
 import {musicChoices,tileColors,validColor} from './personalization.js';
 import {validRaceInterval,raceNextAt} from './race.js';
 import {validScore} from './scoreboard.js';
-import {seasonalSnapshot,seasonalIndices,validSeasonalSnapshot} from './seasonal.js';
+import {seasonalSnapshot,seasonalPictureIndices,validSeasonalSnapshot} from './seasonal.js';
 
 export const defaults = { layout: 'Random', difficulty: 1, theme: 'blue', collection: 'mixed',
   matching: 'subject', mode: 'relaxed', raceInterval:5, memoryInterval:4, available: false, captions: false,
@@ -23,10 +23,12 @@ export function makeGame(settings, library, random = Math.random) {
   const seasonal=seasonalSnapshot(settings);
   let pool=Array.from({length:standardTileCount},(_,i)=>i);
   if(seasonal.tiles){
-    const pictures=[...seasonalIndices];
-    pool=seasonal.mix==='all'?pictures:[...pictures,...shuffle(pool.filter(i=>!seasonalIndices.includes(i)),random).slice(0,7)];
+    const pictures=[...seasonalPictureIndices];
+    pool=seasonal.mix==='all'?pictures:[...pictures,...shuffle(pool.filter(i=>!pictures.includes(i)),random).slice(0,7)];
   }
   const standard = shuffle(pool.map(i=>i+10),random);
+  // Small boards can use fewer identities than the pool. Keep the recurring rabbit included.
+  if(seasonal.tiles){standard.splice(standard.indexOf(44),1);standard.unshift(44);}
   let identities = settings.collection === 'traditional' ? standard : photos.map((_, i) => i);
   if (settings.collection === 'mixed' && photos.length) identities = standard.flatMap((face,i)=>[i%photos.length,face]);
   if (!identities.length) identities = standard;

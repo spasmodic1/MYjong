@@ -1,3 +1,12 @@
+MYjong 0.9.12 adds recorded instruments and recurring seasonal red rabbits.
+
+- All eleven music tracks now use recorded grand piano, concert harp, glockenspiel, bowed glass and sleigh bells, with richer stereo room ambience. Everything remains bundled for offline playback.
+- Seasonal puzzles include a separate Red rabbit pair alongside the existing holiday pictures. Eleven themes use the reviewed seasonal rabbit artwork; the others retain the classic red rabbit.
+- Winter, Easter, Spring, Summer, July and School rabbits use natural red fur and simple seasonal accessories. Gold is retained for Valentine and St. Patrick variants.
+- Includes the compact Seasonal settings dropdown, clearer Next puzzle mode label and theme selector, score button improvements, and delayed-playback fix from 0.9.11.
+
+Use Settings → Check for Updates, or install MYjong-Setup-0.9.12.exe.
+
 MYjong 0.9.11 keeps Settings compact.
 
 - Show the next puzzle’s theme on the toolbar and in New Game; keep the current theme until the puzzle ends. Guard against delayed music playback restarting an old track.
