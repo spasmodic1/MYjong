@@ -47,6 +47,13 @@ jobs:
         if: ${{ startsWith(github.ref, 'refs/tags/v') && steps.existing.outputs.published != 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Verify package and publish matching update metadata
+        if: ${{ startsWith(github.ref, 'refs/tags/v') && steps.existing.outputs.published != 'true' }}
+        run: |
+          node tools/verify-package.cjs
+          node tools/publish-release-metadata.cjs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/upload-artifact@v4
         with:
           name: MYjong-Windows
