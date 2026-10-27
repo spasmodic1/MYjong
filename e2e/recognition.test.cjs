@@ -9,7 +9,7 @@ test('bundled models find people and pets without remote requests',{timeout:1800
   const dir=await fs.mkdtemp(path.join(os.tmpdir(),'myjong-models-'));
   const app=await electron.launch({args:[root],env:{...process.env,MYJONG_TEST_DATA:dir,MYJONG_SMOKE:'1'}});
   t.after(async()=>{await app.close();await fs.rm(dir,{recursive:true,force:true});});
-  const page=await app.firstWindow();page.setDefaultTimeout(15000);await page.waitForSelector('.tile');
+  const page=await app.firstWindow();page.setDefaultTimeout(15000);await page.waitForSelector('.tile');if(await page.locator('#splash-dialog[open]').count())await page.keyboard.press('Enter');
   page.on('console',m=>console.log('Renderer:',m.text().slice(0,200)));
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   const remote=[];page.on('request',r=>{if(/^https?:/.test(r.url()))remote.push(r.url());});

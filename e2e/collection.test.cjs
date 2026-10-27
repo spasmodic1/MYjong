@@ -10,7 +10,7 @@ test('collection reopens with all existing photos after a filtered import or nam
   const originalIds=lib.data.photos.map(p=>p.id),subject=lib.data.subjects[0].id;
   const file=path.join(dir,'new-photo.png');await sharp({create:{width:600,height:400,channels:3,background:'#b8a8b8'}}).png().toFile(file);
   app=await electron.launch({...process.env.MYJONG_TEST_PACKAGE==='1'?{executablePath:path.join(root,'dist/win-unpacked/MYjong.exe'),args:[]}:{args:[root]},env:{...process.env,MYJONG_TEST_DATA:data,MYJONG_SMOKE:'1'}});
-  const page=await app.firstWindow();page.setDefaultTimeout(15000);await page.waitForSelector('.tile');
+  const page=await app.firstWindow();page.setDefaultTimeout(15000);await page.waitForSelector('.tile');if(await page.locator('#splash-dialog[open]').count())await page.keyboard.press('Enter');
   await page.locator('#photos').click();assert.equal(await page.locator('.photo-card').count(),21);
   assert.equal(await page.locator('#subject-filter option[value="unassigned"]').evaluate(option=>option.disabled),true);
   // A stale pre-fix selection must also recover when the collection is reopened.

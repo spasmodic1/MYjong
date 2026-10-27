@@ -1,3 +1,14 @@
+MYjong 0.9.9 brings painted tiles and a year of seasonal scenery.
+
+- All 35 traditional tile faces now use original painted artwork, including the red-and-gold rabbit. All 126 seasonal illustrations match the botanical scenic style.
+- Eighteen automatic monthly themes add static scenic backgrounds, coordinated tile finishes and optional seasonal faces. Choose individual celebrations and monthly favorites in Settings. Christmas is the December default; Hanukkah and Winter Solstice are optional.
+- A small top-bar preview switches seasonal mode on or off without replacing the current puzzle. Seasonal faces mix with traditional tiles by default; All seasonal is also available. Match the same seasonal picture and number. Number markers remain visible when names are hidden.
+- Five original seasonal music arrangements cover winter, spring/Easter, Halloween, Christmas and Hanukkah. Seasonal music is optional and respects the music and volume controls. Local audio now supports seeking and reliable duration metadata.
+- The game checks for updates quietly on launch, with a small notice when a newer release is available. Downloads and installation still require confirmation.
+- Fixed tile sizing across artwork types. All scenery, illustrations and music are bundled for offline play. Existing photos, names, scores and saved puzzles are preserved.
+
+Use Settings → Check for Updates, or install MYjong-Setup-0.9.9.exe.
+
 MYjong 0.9.8 adds an uninstall prompt to remove all MYjong data for the current Windows user. Choose Yes to permanently remove stored photo copies, saves, scores, settings and caches, No to keep them, or Cancel to stop. Updates preserve data. Original photos and externally saved backups are untouched.
 
 MYjong 0.9.7 sets first-run defaults to Random layout, Relaxed difficulty, Photos & traditional tiles, Match the same person or pet, and Relaxed play. Appearance and audio defaults use Evening blue, porcelain Classic tiles, Comfortable text, names and blocked shading off, sounds on, music off, Garden walk/Moonlight tunes, and 45% volume. Race arrivals default to 5 seconds after the opening grace period; Memory reveals default to 4 seconds. The starter collection seeds photos without overriding these defaults.

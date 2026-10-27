@@ -1,0 +1,44 @@
+.seasonal-toggle{display:flex;align-items:center;justify-content:center;gap:7px;padding:5px 10px;background:var(--preview-bg);border:1px solid #d8c99588;border-radius:12px;min-width:76px;position:relative}
+.seasonal-toggle[aria-pressed="false"]{filter:saturate(.5);opacity:.75}
+.seasonal-toggle[aria-pressed="true"]{box-shadow:0 0 0 2px #f5dca433}
+.seasonal-toggle-icon{font:25px 'Segoe UI Emoji',sans-serif}
+.seasonal-mini{display:grid;place-items:center;width:24px;height:32px;background:var(--preview-tile);border-radius:4px;border:1px solid #fff9;box-shadow:0 3px 0 #acb6ad;font:17px 'Segoe UI Emoji',sans-serif;color:#234d43}
+body.seasonal-background{background-color:var(--season-bg);--panel:var(--season-bg);--gold:var(--season-accent);--muted:#e0e6e5;color:#fff6e8}
+.seasonal-background .topbar,.seasonal-background .sidebar,.seasonal-background footer{background:linear-gradient(120deg,#0002,#ffffff08),var(--season-bg);color:#fff6e8}
+.seasonal-background .play-area{background:radial-gradient(ellipse at 50% 30%,#ffffff10,transparent 80%)}
+.seasonal-background #board-space{background:var(--season-image) left bottom / cover no-repeat,var(--season-bg)}
+.seasonal-background #board-space:before{background:none;border:2px solid var(--season-accent);inset:10px;border-radius:20px;opacity:.6}
+.seasonal-background #board-space:after{border-color:var(--season-accent);opacity:.35;inset:17px}
+.seasonal-background .board-heading,.seasonal-background #status,.seasonal-background #pause,.seasonal-background #pair-count{color:#fff6e8}
+.seasonal-background dialog{background-color:var(--season-bg);color:#fff6e8}
+body.seasonal-tiles .tile:not(.face-down){background:linear-gradient(135deg,#fffefa,var(--season-tile));border-color:var(--season-accent)}
+.seasonal-tiles .tile.face-down{background:linear-gradient(135deg,var(--season-bg),#172d35);border-color:var(--season-accent)}
+.seasonal-face{width:78%;height:70%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2%;pointer-events:none}
+.seasonal-symbol{overflow:hidden}
+.seasonal-number{font:700 clamp(12px,calc(var(--tile-width) * .19),24px)/1.1 'Segoe UI',sans-serif;color:#24433e;background:#ffffffb0;min-width:1.4em;text-align:center;border-radius:50%;border:1px solid #546a5d55}
+.seasonal-month{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;padding:14px 0;border-top:1px solid #ffffff25}
+.seasonal-month>strong{width:100%;color:#ffe4af}
+.seasonal-month label.check{margin:0;min-height:36px}
+.seasonal-preference{margin:0 0 0 auto;display:flex;align-items:center;gap:10px;font-size:13px}
+.seasonal-preference select{max-width:210px}
+@media(max-width:700px){.seasonal-preference{margin-left:0;flex-wrap:wrap}.seasonal-toggle{min-width:65px}}
+
+
+
+/* Keep illustrations and long captions inside one tile size. */
+#board .tile{width:var(--tile-width);min-width:var(--tile-width);max-width:var(--tile-width);height:calc(var(--tile-width) * 1.5);min-height:calc(var(--tile-width) * 1.5);max-height:calc(var(--tile-width) * 1.5);padding:0;flex:none;aspect-ratio:2 / 3}
+.seasonal-face{flex:0 0 70%;min-width:0;min-height:0;overflow:hidden;position:relative}
+.seasonal-symbol{width:100%;height:72%;min-height:0;flex:0 0 72%;display:grid;place-items:center;overflow:hidden;line-height:1}
+
+.seasonal-number{flex:none}
+
+/* Painted assets use a consistent contained window, independent of font metrics. */
+.tile-standard{object-fit:contain;object-position:center;display:block}
+.seasonal-illustration{display:block;width:100%;height:100%;object-fit:contain;object-position:center;pointer-events:none}
+.seasonal-toggle-icon{display:block;width:29px;height:29px}
+.seasonal-mini .seasonal-illustration{width:21px;height:27px}
+.seasonal-month label.check{display:flex;align-items:center;gap:8px}
+.seasonal-month label.check>.seasonal-illustration{width:28px;height:28px;flex:none}
+.seasonal-face{display:grid;grid-template-rows:minmax(0,1fr) auto;gap:3%;justify-items:center}
+.seasonal-symbol{height:100%;min-height:0}
+.seasonal-number{justify-self:center}

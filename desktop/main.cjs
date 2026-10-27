@@ -8,7 +8,7 @@ const { startPhone } = require('./phone.cjs');
 const { PetMatcher } = require('./pet-matcher.cjs');
 const root = path.resolve(__dirname, '..');
 protocol.registerSchemesAsPrivileged([{ scheme: 'myjong', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream:true } }]);
-let window, library, phone, closeReady = false, updateConfigured=false;
+let window, library, phone, closeReady = false, updatesPromise=null, startupUpdateCheck=null;
 const testingRoot = process.env.MYJONG_TEST_DATA;
 if (testingRoot) app.setPath('userData', path.resolve(testingRoot));
 app.setName('MYjong');
@@ -58,6 +58,10 @@ app.whenReady().then(async () => {
           return net.fetch(pathToFileURL(library.file(id,variant || 'tile')).href);
         }
         if (filename.includes('..') || filename.includes('\\') || !(filename === 'index.html' || /^(src|assets)\//.test(filename))) return new Response('',{status:404});
+        if(/^assets\/music\/[a-z-]+\.ogg$/.test(filename)){
+          const {mediaResponse}=require('./media-response.cjs');
+          return mediaResponse(await fs.readFile(path.join(root,filename)),request);
+        }
         return net.fetch(pathToFileURL(path.join(root,filename)).href);
       }
       if (url.hostname !== 'photo') return new Response('', { status: 404 });
@@ -121,27 +125,27 @@ app.whenReady().then(async () => {
     return { url: phone.url, qr: phone.qr, sessionId };
   });
   handle('stop-phone', () => { phone?.close(); phone = null; });
-  handle('update', async () => {
-    let config;
-    try { config = JSON.parse(await fs.readFile(path.join(root, 'release-config.json'), 'utf8')); } catch { /* An offline build has no feed. */ }
-    if (!app.isPackaged || !config?.owner || !config?.repo) return 'This build has no release channel yet. Your photos and saves are safe to keep using.';
-    const { autoUpdater } = require('electron-updater');
-    if(!updateConfigured){
-      autoUpdater.on('download-progress',progress=>window.webContents.send('update-status',`Downloading MYjong… ${Math.round(progress.percent)}%`));
-      autoUpdater.on('update-downloaded',()=>window.webContents.send('update-status','Update downloaded. Ready when you are.'));
-      updateConfigured=true;
-    }
-    autoUpdater.setFeedURL({ provider: 'github', owner: config.owner, repo: config.repo });
-    autoUpdater.autoDownload = false;
-    autoUpdater.autoInstallOnAppQuit = false;
-    const result = await autoUpdater.checkForUpdates();
-    if (!result || !result.isUpdateAvailable) return 'You have the latest version.';
-    const answer = await dialog.showMessageBox(window, { type: 'question', buttons: ['Download update', 'Later'], defaultId: 0, cancelId: 1, message: `MYjong ${result.updateInfo.version} is available.`, detail: 'Your photo library and saved games will stay on this computer.' });
-    if (answer.response !== 0) return 'Update postponed.';
-    await autoUpdater.downloadUpdate();
-    const install = await dialog.showMessageBox(window, { buttons: ['Restart and install', 'Later'], cancelId: 1, message: 'The update is ready.' });
-    if (install.response === 0) autoUpdater.quitAndInstall();
-    return 'Update downloaded. Use Check for Updates when you are ready to install.';
+  async function getUpdates(){
+    if(!app.isPackaged)return null;
+    if(!updatesPromise)updatesPromise=(async()=>{
+      let config;try{config=JSON.parse(await fs.readFile(path.join(root,'release-config.json'),'utf8'));}catch{return null;}
+      if(!config?.owner||!config?.repo)return null;
+      const send=(channel,value)=>{if(window&&!window.isDestroyed())window.webContents.send(channel,value);};
+      return require('./updates.cjs').createUpdates({updater:require('electron-updater').autoUpdater,feed:config,
+        notify:text=>send('update-status',text),available:info=>send('update-available',info),
+        confirmDownload:async version=>(await dialog.showMessageBox(window,{type:'question',buttons:['Download update','Later'],defaultId:0,cancelId:1,message:`MYjong ${version} is available.`,detail:'Your photo library and saved games will stay on this computer.'})).response===0,
+        confirmInstall:async()=>(await dialog.showMessageBox(window,{buttons:['Restart and install','Later'],cancelId:1,message:'The update is ready.'})).response===0
+      });
+    })();
+    return updatesPromise;
+  }
+  handle('check-update',async()=>{
+    try{const updates=await getUpdates();if(!updates)return {available:false};return startupUpdateCheck ||= updates.startup();}
+    catch{return {available:false,offline:true};}
+  });
+  handle('update',async()=>{
+    const updates=await getUpdates();
+    return updates?updates.interactive():'This build has no release channel yet. Your photos and saves are safe to keep using.';
   });
   if(process.env.MYJONG_SMOKE==='1')window.webContents.setAudioMuted(true);
   await window.loadURL('myjong://app/index.html');

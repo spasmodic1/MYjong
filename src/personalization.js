@@ -1,4 +1,4 @@
-export const musicChoices=[['garden','Garden walk'],['river','Flowing water'],['moonlight','Moonlight'],['sunroom','Sunlit morning'],['starlight','Starlight'],['welcome','Welcome home']];
+export const musicChoices=[['garden','Garden walk'],['river','Flowing water'],['moonlight','Moonlight'],['sunroom','Sunlit morning'],['starlight','Starlight'],['welcome','Welcome home'],['snowfall','Snowfall'],['christmas-bells','Christmas bells'],['halloween-waltz','Midnight garden'],['candlelight','Festival candlelight'],['spring-bloom','Spring bloom']];
 export const tileColors=[['classic','Classic'],['jade','Soft jade'],['sky','Powder blue'],['rose','Blush pink'],['lavender','Lavender']];
 export const validColor=value=>typeof value==='string'&&/^#[0-9a-f]{6}$/i.test(value);
 export function backgroundInk(color){

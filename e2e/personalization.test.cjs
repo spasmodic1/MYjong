@@ -15,7 +15,7 @@ test('personalization previews, plays each tune and preserves choices and puzzle
     window.testPlayers=[];const Native=window.Audio;
     window.Audio=class extends Native{constructor(...args){super(...args);window.testPlayers.push(this);}};
   });
-  await page.locator('#settings').click();await page.locator('#theme').selectOption('custom');
+  await page.locator('#settings').click();await page.locator('#seasonalMusic').uncheck();await page.locator('#theme').selectOption('custom');
   const comfortable=await page.locator('nav .quiet').first().evaluate(el=>parseFloat(getComputedStyle(el).fontSize));
   await page.locator('#textSize').selectOption('large');
   assert.ok(await page.locator('nav .quiet').first().evaluate((el,before)=>parseFloat(getComputedStyle(el).fontSize)>before,comfortable));

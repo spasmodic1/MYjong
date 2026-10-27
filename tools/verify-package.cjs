@@ -11,7 +11,10 @@ for(const file of runtimeFiles){
 }
 assert.ok(files.includes('/assets/recognition.js'));
 assert.ok(files.includes('/assets/starter-collection.zip'));
-for(const track of ['garden','river','moonlight','sunroom','starlight','welcome'])assert.ok(files.includes(`/assets/music/${track}.ogg`),'offline arrangement must be bundled');
+for(const track of ['garden','river','moonlight','sunroom','starlight','welcome','snowfall','christmas-bells','halloween-waltz','candlelight','spring-bloom'])assert.ok(files.includes(`/assets/music/${track}.ogg`),'offline arrangement must be bundled');
+for(const theme of (await import('../src/seasonal.js')).seasons)assert.ok(files.includes(`/assets/seasonal/${theme.id}.webp`),'seasonal scene must be bundled');
+for(const theme of (await import('../src/seasonal.js')).seasons)for(let i=0;i<7;i++)assert.ok(files.includes(`/assets/seasonal/tiles/${theme.id}/${i}.webp`),'painted seasonal face must be bundled');
+for(let i=0;i<35;i++)assert.ok(files.includes(`/assets/tiles/traditional/${i}.webp`),'painted traditional face must be bundled');
 const zip=await JSZip.loadAsync(asar.extractFile(archive,'assets/starter-collection.zip'));
 assert.equal(zip.file('state.json'),null,'starter photos must not override current game defaults');
 const library=JSON.parse(await zip.file('library.json').async('string'));

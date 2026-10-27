@@ -14,8 +14,10 @@ test('Windows app: library, crops, matching, persistence, settings, phone upload
   const launch = async () => {
     application = await electron.launch({ args: [root], env: { ...process.env, MYJONG_TEST_DATA: dir, MYJONG_SMOKE:'1' } });
     const page = await application.firstWindow(); page.setDefaultTimeout(12000);
+    await page.emulateMedia({reducedMotion:'reduce'});
     await page.waitForFunction(() => document.querySelector('#board .tile'));
     await page.waitForFunction(()=>document.querySelector('#board').getAttribute('aria-busy')!=='true');
+    if(await page.locator('#splash-dialog[open]').count())await page.keyboard.press('Enter');
     return page;
   };
   let page = await launch(); const errors = [];
@@ -62,12 +64,13 @@ test('Windows app: library, crops, matching, persistence, settings, phone upload
   for(const id of pair) await page.locator(`.tile[data-id="${id}"]`).click();
   assert.equal(await page.locator('.tile').count(),count-2);
   await page.waitForTimeout(350);
-  await page.reload(); await page.waitForSelector('.tile');
+  await page.reload(); await page.waitForSelector('.tile');await page.keyboard.press('Enter');
+  await page.waitForFunction(()=>document.querySelector('#board').getAttribute('aria-busy')!=='true');
   assert.equal(await page.locator('.tile').count(),count-2);
   await page.locator('#undo').click(); assert.equal(await page.locator('.tile').count(),count);
   await page.locator('#settings').click(); await page.locator('#theme').selectOption('plum');
   await page.locator('#settings-dialog [data-close]').click();
-  await page.waitForTimeout(250); await page.reload(); await page.waitForSelector('body.plum');
+  await page.waitForTimeout(250); await page.reload(); await page.waitForSelector('body.plum');await page.keyboard.press('Enter');
   await page.locator('#pause').click(); assert.equal(await page.locator('#pause-dialog').isVisible(),true);
   await page.locator('#resume').click();
   // A one-subject board has a valid match along every free pair removal path.

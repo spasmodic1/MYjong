@@ -32,6 +32,9 @@ jobs:
       - run: npm run test:scores
       - run: npm run test:memory
       - run: npm run test:layouts
+      - run: npm run test:seasonal
+      - run: node --test e2e/rabbit.test.cjs
+      - run: node --test e2e/startup-update.test.cjs
       - name: Check for an existing published release
         id: existing
         if: startsWith(github.ref, 'refs/tags/v')

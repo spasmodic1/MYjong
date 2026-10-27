@@ -10,7 +10,7 @@ test('file import automatically asks Is this Marley using other confirmed photos
   const subject=lib.data.subjects.find(s=>s.name==='Marley'),heldOut=lib.data.photos.find(p=>p.subjectId===subject.id),file=path.join(dir,'new-marley.jpg');
   await fs.copyFile(lib.file(heldOut.id,'original'),file);await lib.change({type:'delete',id:heldOut.id});
   app=await electron.launch({...process.env.MYJONG_TEST_PACKAGE==='1'?{executablePath:path.join(root,'dist/win-unpacked/MYjong.exe'),args:[]}:{args:[root]},env:{...process.env,MYJONG_TEST_DATA:data,MYJONG_SMOKE:'1'}});
-  const page=await app.firstWindow();page.setDefaultTimeout(20000);await page.waitForSelector('.tile');
+  const page=await app.firstWindow();page.setDefaultTimeout(20000);await page.waitForSelector('.tile');if(await page.locator('#splash-dialog[open]').count())await page.keyboard.press('Enter');
   const remote=[];page.on('request',r=>{if(/^https?:/.test(r.url()))remote.push(r.url());});
   await app.evaluate(({dialog},file)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[file]});},file);
   await page.locator('#photos').click();await page.locator('#import-files').click();

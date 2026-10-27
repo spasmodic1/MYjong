@@ -11,7 +11,7 @@ Download the Windows installer from [Releases](https://github.com/spasmodic1/MYj
 ## What's included
 
 - Relaxed, Balanced, and Challenging puzzles; Terrace, Diamond, Butterfly, and randomized terrace layouts. Starting deals are solvable; later choices can leave dead ends.
-- 34 traditional tile identities, photo collections, and evenly mixed photo/traditional deals.
+- 35 painted traditional tile identities (including the red rabbit), photo collections, and evenly mixed photo/traditional deals.
 - Match identical photos or different photos of the same named person or pet.
 - Automatic save/resume, unlimited undo, cycling hints, and an undoable shuffle that seeks a solvable arrangement for the remaining stacks.
 - Relaxed play or Challenge play with timer, scoring, personal bests, and small achievements. The timer pauses while a dialog is open, the game is paused, or its window is hidden.
@@ -20,7 +20,7 @@ Download the Windows installer from [Releases](https://github.com/spasmodic1/MYj
 - Local high scores with name entry and the last saved name prefilled. Categories distinguish play style, difficulty, layout, starting board size, and race interval. Challenge ranks score before time; Race ranks fastest clear before score. Up to 1,000 named results are retained, with the top 20 in each category shown.
 - An original jade, ivory, and gold logo and Windows icon, illustrated botanical board frame, and styled menus. Comfortable text is the larger default; Standard and Large options are available.
 - Scrollbars stay hidden; wheel, touch and keyboard scrolling remain available. A clickable More indicator appears when there is more content to see.
-- Four preset backgrounds plus a custom background color picker; two tile finishes plus jade, blue, pink, and lavender tile colors; optional captions and blocked-tile dimming; matching sounds and six original arranged music tracks. Menu and game tunes can be selected separately and crossfade between scenes. Choices persist between sessions.
+- Four preset backgrounds plus a custom background color picker; two tile finishes plus jade, blue, pink, and lavender tile colors; optional captions and blocked-tile dimming; matching sounds and eleven original arranged music tracks. Menu and game tunes can be selected separately and crossfade between scenes. Choices persist between sessions.
 - Memory mode hides tile faces. Flip an available tile, then choose another; the previous face hides, and matching pairs disappear. Flip and quick tile-dealing animations respect reduced-motion settings.
 - Modern porcelain tiles with large photo/symbol windows, compact controls, matched-pair effects, and Fit/+/− board zoom; motion effects respect the system's reduced-motion preference. See [visual reference notes](./DESIGN-NOTES.md).
 - Folder and file importing; JPEG, PNG, WebP, AVIF and HEIC/HEIF conversion; phone uploads over home Wi-Fi through a QR code.
@@ -37,11 +37,20 @@ The first analysis after launching can take a little longer while the bundled mo
 
 Person suggestions use SSD MobileNet face detection and full 68-point landmarks. Older reference photos are refreshed locally when needed. Confirming a name also helps with later photos in the same upload batch. Photo Collection opens with all photos visible, and the Needs a name filter is disabled when empty.
 
+All traditional and seasonal tile faces use original painted artwork that matches the scenic backgrounds. The 35 traditional identities retain their familiar marks and counts; 126 seasonal illustrations replace the earlier emoji faces. Seasonal matching numbers remain visible even when names are hidden. See [tile artwork notes](./assets/tiles/README.md).
+
+## Seasonal themes
+
+Automatic monthly themes add coordinated scenic artwork, tile finishes and seasonal faces. The top-bar chip previews the current month’s icon, tile and palette; click it to toggle seasonal mode without starting a new puzzle. Settings → Through the seasons has individual theme checkboxes, background/face switches and a preferred theme for months with alternatives. Christmas is the December default; Hanukkah, Winter Solstice, Lunar New Year (February styling), Earth Day, Summer Nights and Harvest are optional. Scheduling follows the computer’s local month, including when the game stays open across midnight. These are month-long styles, not calculated holiday dates. Eighteen original static scenes feature seasonal subjects at the lower left, botanical edges and a quiet center. Optional original music follows winter, spring/Easter, Halloween, Christmas and Hanukkah when music is enabled, including a spooky music-box arrangement and a Christmas bell/jingle arrangement. Other months use the selected game/menu tunes; disable Seasonal music to keep those tunes all year. Seasonal faces mix with traditional tiles by default; choose **All seasonal** to replace every traditional face. Matching copies always share the same style. Match the same seasonal picture **and number**; photos, puzzle rules and scores stay the same. Choosing a regular background or tile finish/color turns off the corresponding seasonal styling.
+
 ## Photos and saves
 
 MYjong stores its photo library and saved game under `%APPDATA%\MYjong`, outside the installation folder. Updates keep that folder. Interactive uninstalling asks whether to delete all MYjong data for the current Windows user: Yes removes the stored photo copies, saves, scores, settings and caches; No keeps them for a reinstall; Cancel stops uninstalling. No is selected by default. Original photo files and backups exported outside MYjong data are preserved. Silent maintenance keeps data unless deletion is explicitly requested. Use **Settings → Create backup** to save a ZIP containing the collection and game, and **Restore backup** to move it to another computer.
 
 For phone uploads, connect both devices to the same private home Wi-Fi, open **Photo collection → Send from phone**, and scan the QR code. Keep MYjong open while your photos finish sending. The QR dialog closes automatically when photos arrive, without interrupting the remaining selected photos. Manually closing a fresh QR dialog cancels that session. Its link expires after 15 minutes. Windows may request firewall access for the private network. Public Wi-Fi, guest networks with device isolation, and corporate networks may prevent the connection. The transfer is direct local HTTP with a randomly generated session link; use a trusted home network. No cloud account is required. Device photo pickers determine how many photos can be selected together. Imports are limited to 40 MB per photo and 500 files per batch.
+
+**Android Chrome troubleshooting:** On Android 17, `ERR_TOO_MANY_RETRIES` when opening the phone link can be caused by a missing Chrome local-network permission. On the phone, open **Settings → Apps → Chrome → Permissions → Nearby devices → Allow**. If already allowed, re-grant the permission by switching it off and on, then force stop and reopen Chrome. Allow a separate Local network permission if the phone displays one. Retry a fresh MYjong QR link. Android groups its local-network permission under Nearby devices; see [Android local-network permission guidance](https://developer.android.com/privacy-and-security/local-network-permission).
+
 
 Recognition can miss faces, confuse people, or miss small/obscured animals. Review suggested names and framing, especially group photos. The pet detector includes cats, dogs, birds and horses. A separate bundled DINOv2 image model compares detected animals with confirmed pet photos; these appearance-based suggestions are tentative, particularly for pets of similar breeds or coloring. MYjong never applies a suggested name without confirmation. You can always assign names and frame photos manually. Crops use the actual 4:5 photo window inside the portrait tile, with the full photo retained separately.
 
@@ -69,6 +78,7 @@ npm run test:race        # Arrivals, pause, reload, full-board loss and clear-bo
 npm run test:loss        # Automatic loss popup and exact first-losing-move rollback
 npm run test:scores      # Named records, persistence and last-used name
 npm run test:memory      # Hidden faces, flips, matches, saves and reduced motion
+npm run test:seasonal    # Monthly themes, opt-outs, preview toggle and persistence
 npm run test:layouts     # Distinct silhouettes and quick dealing animation
 npm run build            # Windows NSIS installer, blockmap and latest.yml
 ```
@@ -77,7 +87,7 @@ Recognition code is compiled into `assets/recognition.js`. Model files are check
 
 ## Releases and updates
 
-`release-config.json` identifies this repository. The Windows app checks GitHub only when **Settings → Check for Updates** is selected, asks before downloading, and asks before restarting to install. It does not check automatically at startup. Updates preserve app data and never replace an existing photo library with the starter library. First-run starter extraction happens only when no library exists.
+`release-config.json` identifies this repository. The Windows app checks GitHub quietly once per launch and shows a small top-bar notice if a newer release is available. Startup checks never open an update popup, download an installer or restart the game; offline failures leave play uninterrupted. **Settings → Check for Updates** checks manually, asks before downloading, and asks before restarting to install. Updates preserve app data and never replace an existing photo library with the starter library. First-run starter extraction happens only when no library exists.
 
 To publish the next version, update `package.json` and the lockfile, commit, and push a matching `vX.Y.Z` tag. GitHub Actions tests the app and publishes the installer, blockmap and `latest.yml` to a GitHub release using the workflow's repository token. No GitHub token is embedded in the app. Keep release tags and version numbers aligned. Do not upload backups or personal photo collections to releases unless those particular assets are explicitly approved for distribution.
 

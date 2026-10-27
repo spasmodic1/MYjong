@@ -12,7 +12,7 @@ test('named scores persist, cannot duplicate and prefill the most recent player'
   const launch=()=>electron.launch({...process.env.MYJONG_TEST_PACKAGE==='1'?{executablePath:path.join(root,'dist/win-unpacked/MYjong.exe'),args:[]}:{args:[root]},env:{...process.env,MYJONG_TEST_DATA:dir,MYJONG_SMOKE:'1'}});
   let app=await launch();
   t.after(async()=>{await app?.close();await fs.rm(dir,{recursive:true,force:true});});
-  let page=await app.firstWindow();page.setDefaultTimeout(15000);await page.waitForSelector('.tile');
+  let page=await app.firstWindow();page.setDefaultTimeout(15000);await page.waitForSelector('.tile');if(await page.locator('#splash-dialog[open]').count())await page.keyboard.press('Enter');
   const win=async()=>{for(const id of [0,1,2,3])await page.locator(`.tile[data-id="${id}"]`).click();await page.waitForSelector('#win-dialog[open]');};
   await win();await page.locator('#save-score').click();assert.match(await page.locator('#score-saved').textContent(),/Enter a name/);
   await page.locator('#score-name').fill('  Mom  ');await page.locator('#save-score').click();
@@ -22,11 +22,11 @@ test('named scores persist, cannot duplicate and prefill the most recent player'
   await page.locator('#win-dialog [data-close]').click();await page.locator('#high-scores').click();assert.match(await page.locator('#scoreboard-list').textContent(),/Mom/);
   await fs.mkdir(path.join(root,'Screenshots/0.9.3'),{recursive:true});await page.screenshot({path:path.join(root,'Screenshots/0.9.3/high-scores.png')});
   await app.close();app=null;loaded.state.game=fixture();await fs.writeFile(path.join(dir,'state.json'),JSON.stringify(loaded.state));
-  app=await launch();page=await app.firstWindow();page.setDefaultTimeout(15000);await page.waitForSelector('.tile');
+  app=await launch();page=await app.firstWindow();page.setDefaultTimeout(15000);await page.waitForSelector('.tile');if(await page.locator('#splash-dialog[open]').count())await page.keyboard.press('Enter');
   await win();assert.equal(await page.locator('#score-name').inputValue(),'Mom');
   await page.locator('#score-name').fill('Alex');await page.locator('#save-score').click();
   await page.waitForFunction(async()=> (await window.myjong.load()).state.stats.highScores?.length===2);
   loaded=await page.evaluate(()=>window.myjong.load());assert.equal(loaded.state.settings.playerName,'Alex');assert.equal(loaded.state.stats.highScores.length,2);
-  await page.reload();await page.waitForSelector('#high-scores');await page.locator('#high-scores').click();
+  await page.reload();await page.waitForSelector('#splash-dialog[open]');await page.keyboard.press('Enter');await page.locator('#high-scores').click();
   assert.match(await page.locator('#scoreboard-list').textContent(),/Alex/);assert.match(await page.locator('#scoreboard-list').textContent(),/Mom/);
 });

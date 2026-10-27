@@ -1,0 +1,10 @@
+{
+  "method": "OpenAI built-in image_gen",
+  "corrections": [
+    {
+      "tile": "Bamboo 7",
+      "target": "assets/tiles/traditional/15.webp",
+      "prompt": "One traditional Mahjong Bamboo Seven face illustration, isolated on genuinely transparent background. EXACTLY SEVEN separate short green bamboo stalk ornaments with gold rims, each has two internode segments and a small leaf accent. Arrange them in FOUR rows: row 1 exactly ONE stalk centered; row 2 exactly TWO stalks; row 3 exactly TWO stalks; row 4 exactly TWO stalks. Total 1+2+2+2 = SEVEN stalks. Do not join stalks. Full composition centered with 12% transparent margins. Hand-painted jade-green porcelain/enamel, delicate natural pigment texture, warm antique-gold edges, refined botanical storybook rendering matching an ornate mahjong garden game. Bold clear silhouette readable at 48px. No tile, frame, background, extra objects, text, numbers, or emoji style. This exact count is essential for a playable game."
+    }
+  ]
+}

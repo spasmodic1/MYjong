@@ -13,7 +13,7 @@ test('maximized welcome, custom menu palette, live preview and timed Memory reve
  for(const [id,value] of Object.entries({layout:'Random',difficulty:'1',collection:'mixed',matching:'subject',mode:'relaxed'}))assert.equal(await page.locator('#'+id).inputValue(),value);
  await page.locator('#new-dialog [data-close]').first().click();
  await page.locator('#settings').click();
- for(const [id,value] of Object.entries({theme:'blue',tileStyle:'porcelain',tileColor:'classic',textSize:'comfortable',musicTrack:'garden',menuMusicTrack:'moonlight',volume:'0.45',backgroundColor:'#64496e'}))assert.equal(await page.locator('#'+id).inputValue(),value);
+ for(const [id,value] of Object.entries({theme:'seasonal',tileStyle:'porcelain',tileColor:'classic',textSize:'comfortable',musicTrack:'garden',menuMusicTrack:'moonlight',volume:'0.45',backgroundColor:'#64496e'}))assert.equal(await page.locator('#'+id).inputValue(),value);
  for(const [id,value] of Object.entries({available:false,captions:false,sound:true,music:false}))assert.equal(await page.locator('#'+id).isChecked(),value);
  await page.locator('#theme').selectOption('custom');
  await page.locator('#backgroundColor').evaluate(el=>{el.value='#e9d7b8';el.dispatchEvent(new Event('input',{bubbles:true}));});

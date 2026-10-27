@@ -1,3 +1,4 @@
+import {seasons,normalizeSeasonal,currentSeason,seasonalFace,seasonalArt,seasonalBackground,usesSeasonalFace,seasonalImage,seasonalIconIndex} from './seasonal.js';
 import { isFree, pairs } from './rules.js';
 import { makeGame, defaults, emptyStats, photoUrl, reshuffle, score, validState, betterResult } from './game.js';
 import { createHintCycle } from './hints.js';
@@ -48,13 +49,34 @@ function save(immediate = false) {
   };
   if (immediate) commit(); else saveTimer = setTimeout(commit, 150);
 }
+let activeSeason=null,seasonStamp="";
+function faceArt(index){return activeSeason&&usesSeasonalFace(state.settings,index)?seasonalArt(activeSeason,index):standardArt(index);}
 function appearance() {
-  const s = state.settings;
-  document.body.className = [s.theme, s.tileStyle === 'porcelain' ? 'porcelain' : '', s.available ? '' : 'no-dim', s.captions ? '' : 'no-captions'].join(' ');
+  const s = normalizeSeasonal(state.settings);
+  activeSeason=currentSeason(s);seasonStamp=new Date().toDateString();
+  document.body.className = [s.theme==='seasonal'?'blue':s.theme, s.tileStyle === 'porcelain' ? 'porcelain' : '', s.available ? '' : 'no-dim', s.captions ? '' : 'no-captions'].join(' ');
   document.body.dataset.tileColor=s.tileColor;
   document.body.dataset.textSize=s.textSize;
   document.body.style.setProperty('--custom-background',s.backgroundColor);
   document.body.style.setProperty('--board-ink',backgroundInk(s.backgroundColor));
+  const seasonalBg=Boolean(activeSeason&&s.seasonalBackground);
+  document.body.classList.toggle('seasonal-background',seasonalBg);
+  if(seasonalBg)document.body.classList.remove('custom');
+  document.body.classList.toggle('seasonal-tiles',Boolean(activeSeason&&s.seasonalTiles));
+  document.body.dataset.season=activeSeason?.id||'';
+  const preview=currentSeason({...s,seasonalMode:true});
+  const toggle=$('seasonal-toggle');toggle.replaceChildren();
+  toggle.setAttribute('aria-pressed',String(s.seasonalMode));
+  const label=preview?`${preview.name} · ${s.seasonalMode?'seasonal mode on; switch to default':'seasonal mode off; switch on'}`:'No theme enabled this month · seasonal mode '+(s.seasonalMode?'on':'off');
+  toggle.title=label;toggle.setAttribute('aria-label',label);
+  toggle.style.setProperty('--preview-bg',preview?.bg||'#244f66');
+  toggle.style.setProperty('--preview-tile',preview?.tint||'#fff7df');
+  const icon=document.createElement('span');icon.className='seasonal-toggle-icon';if(preview)icon.append(seasonalImage(preview,seasonalIconIndex(preview)));else icon.textContent='◌';icon.setAttribute('aria-hidden','true');
+  const mini=document.createElement('span');mini.className='seasonal-mini';mini.setAttribute('aria-hidden','true');if(preview)mini.append(seasonalImage(preview,0));else mini.textContent='東';
+  toggle.append(icon,mini);
+  if(activeSeason){for(const [key,value] of Object.entries({'--season-bg':activeSeason.bg,'--season-accent':activeSeason.accent,'--season-tile':activeSeason.tint,'--season-image':seasonalBackground(activeSeason)}))document.body.style.setProperty(key,value);}
+  for(const key of ['seasonalMode','seasonalBackground','seasonalTiles','seasonalMusic'])$(key).checked=s[key];
+  audio.sync();
   renderTilePreview();
   $('custom-background').hidden=s.theme!=='custom';
   $('background-color-value').textContent=s.backgroundColor.toUpperCase();
@@ -66,8 +88,8 @@ function renderTilePreview(){
     const tile=document.createElement('div');tile.className=`tile${blocked?' blocked':''}`;
     const sample=game().photos[0];
     if(sample||!blocked){const image=document.createElement('img');image.className='tile-photo';image.src=sample?.variants[0].src||'./assets/branding/emblem.webp';image.alt='';tile.append(image);}
-    else tile.append(standardArt(0));
-    const caption=document.createElement('span');caption.className='tile-caption';caption.textContent=sample?.name||(!blocked?'Photo name':'Dots 1');tile.append(caption);area.append(tile);
+    else tile.append(faceArt(0));
+    const caption=document.createElement('span');caption.className='tile-caption';caption.textContent=sample?.name||(!blocked?'Photo name':activeSeason&&state.settings.seasonalTiles?seasonalFace(activeSeason,0).name:'Dots 1');tile.append(caption);area.append(tile);
   }
 }
 function sizeBoard() {
@@ -88,7 +110,7 @@ function sizeBoard() {
   }
 }
 function tileName(tile) {
-  return tile.face >= 10 ? standardName(tile.face - 10) : game().photos[tile.face]?.name || 'Photo';
+  return tile.face >= 10 ? (activeSeason&&usesSeasonalFace(state.settings,tile.face-10)?seasonalFace(activeSeason,tile.face-10).name:standardName(tile.face - 10)) : game().photos[tile.face]?.name || 'Photo';
 }
 function updateCounters() {
   const g = game(), remaining = g.tiles.filter(t => !t.removed).length, moves = pairs(g.tiles).length;
@@ -107,14 +129,15 @@ function updateCounters() {
   $('progress-fill').style.width = `${(1 - remaining / g.tiles.length) * 100}%`;
   const hasPhotos = g.tiles.some(t => t.face < 10);
   $('collection-note').textContent = hasPhotos ? (g.tiles.some(t => t.face >= 10) ? 'Your memories & a little tradition' : 'A collection of familiar faces') : 'The traditional collection';
-  $('matching-note').textContent = g.mode==='memory'?'Reveal a tile, remember it, then find its partner. Only open tiles can be flipped.':hasPhotos ? (g.matching === 'subject' ? 'Match the same person or pet, even in different photos.' : 'Match identical photos and traditional symbols.') : 'Match identical traditional symbols.';
+  if(activeSeason&&state.settings.seasonalTiles&&g.tiles.some(t=>t.face>=10))$('collection-note').textContent=(hasPhotos?'Your memories & ':'')+activeSeason.name+' collection';
+  $('matching-note').textContent = g.mode==='memory'?'Reveal a tile, remember it, then find its partner. Only open tiles can be flipped.':hasPhotos ? (g.matching === 'subject' ? 'Match the same person or pet, even in different photos.' : 'Match identical photos and traditional symbols.') : activeSeason&&state.settings.seasonalTiles?(state.settings.seasonalFaceMix==='mixed'?'Match identical traditional symbols, or the same seasonal picture and number.':'Match the same seasonal picture and number.'):'Match identical traditional symbols.';
   $('undo').disabled = memoryBusy || !g.history.length || g.history.at(-1)?.type==='arrival' || g.recorded || raceFinished(g);
   $('undo').title=g.mode==='race'?'Undo moves since the latest incoming pair (Ctrl+Z)':'Undo (Ctrl+Z)';
   $('hint').disabled = $('shuffle').disabled = memoryBusy || remaining === 0 || raceFinished(g);
   $('show-loss-options').hidden=g.mode==='race'||remaining===0||moves>0||raceFinished(g);
   return { remaining, moves };
 }
-function render(message = '') {
+function render(message = '', {appearanceOnly=false}={}) {
   const focused = document.activeElement?.dataset?.id;
   const board = $('board'); board.replaceChildren();
   for (const tile of game().tiles.filter(t => !t.removed).sort((a,b) => a.z - b.z || a.y - b.y)) {
@@ -128,7 +151,7 @@ function render(message = '') {
     button.setAttribute('aria-pressed', String(selected === tile.id));
     button.title = `${faceDown?'Hidden tile':tileName(tile)} · ${free ? 'Available' : 'Blocked'}`;
     if(faceDown){const back=document.createElement('img');back.className='tile-back';back.src='./assets/branding/emblem.webp';back.alt='';button.append(back);}
-    else if (tile.face >= 10) button.append(standardArt(tile.face - 10));
+    else if (tile.face >= 10) button.append(faceArt(tile.face - 10));
     else {
       const photo = game().photos[tile.face], variant = photo.variants[tile.variant || 0] || photo.variants[0];
       const img = document.createElement('img'); img.className = 'tile-photo'; img.src = variant.src; img.alt = ''; img.draggable = false;
@@ -145,7 +168,7 @@ function render(message = '') {
   if (focused) (board.querySelector(`[data-id="${focused}"]`) || board.querySelector('.tile:not(.blocked)'))?.focus({ preventScroll: true });
   save();
   if(moves>0||remaining===0){lossSignature=null;rollbackPlan=null;lossWorker?.terminate();lossWorker=null;}
-  else offerLossRecovery();
+  else if(!appearanceOnly)offerLossRecovery();
 }
 const boardSignature=()=>game().tiles.map(t=>`${t.id}:${t.face}:${t.removed}`).join('|');
 function offerLossRecovery(force=false){
@@ -325,8 +348,26 @@ async function startNew(event) {
   state.settings = next; state.game = g; state.stats.played++;
   selected = null; highlighted = [];memoryBusy=false;memoryRevealed=[]; close('new-dialog'); lastTick = performance.now(); render('A fresh puzzle, just for you.');animateDeal(); save(true);
 }
+function seasonalChoices(){
+  const s=normalizeSeasonal(state.settings),area=$('seasonal-choices');area.replaceChildren();
+  $('seasonalFaceMix').value=s.seasonalFaceMix;
+  for(const key of ['seasonalMode','seasonalBackground','seasonalTiles','seasonalMusic'])$(key).checked=s[key];
+  for(let month=0;month<12;month++){
+    const row=document.createElement('div');row.className='seasonal-month';
+    const heading=document.createElement('strong');heading.textContent=new Date(2026,month,1).toLocaleString(undefined,{month:'long'});row.append(heading);
+    const choices=seasons.filter(t=>t.month===month);
+    for(const theme of choices){const label=document.createElement('label');label.className='check';const input=document.createElement('input');input.type='checkbox';input.checked=s.seasonalEnabled.includes(theme.id);input.dataset.season=theme.id;input.onchange=()=>{s.seasonalEnabled=input.checked?[...s.seasonalEnabled,theme.id]:s.seasonalEnabled.filter(id=>id!==theme.id);appearance();render('',{appearanceOnly:true});seasonalChoices();};label.append(input,seasonalImage(theme,seasonalIconIndex(theme)),document.createTextNode(theme.name));row.append(label);}
+    if(choices.length>1){const label=document.createElement('label');label.className='seasonal-preference';label.textContent='Preferred theme';const select=document.createElement('select');select.setAttribute('aria-label',heading.textContent+' preferred theme');const enabled=choices.filter(t=>s.seasonalEnabled.includes(t.id));select.replaceChildren(...enabled.map(t=>option(t.name,t.id)));select.disabled=!enabled.length;select.value=enabled.some(t=>t.id===s.seasonalPreferred[month])?s.seasonalPreferred[month]:enabled[0]?.id||'';select.onchange=()=>{s.seasonalPreferred[month]=select.value;appearance();render('',{appearanceOnly:true});};label.append(select);row.append(label);}
+    area.append(row);
+  }
+}
+function updateNotice(info){
+  const button=$('launch-update');button.hidden=!info?.available;
+  button.textContent=info?.version?`Update ${info.version} available`:'Update available';
+}
 function openSettings() {
-  for (const key of ['theme','tileStyle','tileColor','textSize','backgroundColor','musicTrack','menuMusicTrack','volume']) $(key).value = state.settings[key];
+  seasonalChoices();
+  for (const key of ['theme','tileStyle','tileColor','textSize','backgroundColor','musicTrack','menuMusicTrack','volume']) $(key).value = key==='theme'&&activeSeason&&state.settings.seasonalBackground?'seasonal':state.settings[key];
   for (const key of ['available','captions','sound','music']) $(key).checked = state.settings[key];
   $('settings-message').textContent = ''; show('settings-dialog');renderTilePreview();
 }
@@ -540,6 +581,9 @@ function bind() {
     if (reshuffle(game())) { game().history.push({ type: 'shuffle', tiles: before }); game().shuffles++; selected = null; highlighted = []; render('A fresh arrangement. There’s a path through these tiles.'); }
     else await message('These stacks need an earlier move', 'Undo a few matches or start another puzzle. The remaining stack shape could not be paired into a solvable arrangement.');
   });
+  $('seasonal-toggle').onclick=()=>{state.settings.seasonalMode=!state.settings.seasonalMode;appearance();render('',{appearanceOnly:true});};
+  $('seasonalFaceMix').onchange=()=>{state.settings.seasonalFaceMix=$('seasonalFaceMix').value;appearance();render('',{appearanceOnly:true});};
+  for(const key of ['seasonalMode','seasonalBackground','seasonalTiles','seasonalMusic'])$(key).oninput=()=>{state.settings[key]=$(key).checked;appearance();render('',{appearanceOnly:true});};
   $('settings').onclick = openSettings; $('help').onclick = () => show('help-dialog'); $('statistics').onclick = openStats;
   $('high-scores').onclick=openScores;$('score-category').onchange=renderScores;$('save-score').onclick=saveNamedScore;
   $('score-name').onkeydown=event=>{if(event.key==='Enter'){event.preventDefault();saveNamedScore();}};
@@ -551,7 +595,9 @@ function bind() {
   $('tileColor').replaceChildren(...tileColors.map(([id,name])=>option(name,id)));
   for (const key of ['theme','tileStyle','tileColor','textSize','backgroundColor','musicTrack','menuMusicTrack','available','captions','sound','music','volume']) $(key).oninput = () => {
     state.settings[key] = ['available','captions','sound','music'].includes(key) ? $(key).checked : key === 'volume' ? Number($(key).value) : $(key).value;
-    appearance();sizeBoard(); audio.sync(); save();
+    if(key==='theme')state.settings.seasonalBackground=$(key).value==='seasonal';
+    if(key==='tileColor'||key==='tileStyle')state.settings.seasonalTiles=false;
+    appearance();render('',{appearanceOnly:true});sizeBoard(); audio.sync(); save();
   };
   $('backup').onclick = () => run(async () => { if (await api.backup()) $('settings-message').textContent = 'Backup saved. Keep a copy somewhere safe.'; });
   if (api.restore) {
@@ -569,6 +615,8 @@ function bind() {
   }
   $('update').onclick = () => run(async () => { $('update').disabled = true; $('settings-message').textContent = 'Checking for updates…'; try { $('settings-message').textContent = await api.update(); } finally { $('update').disabled = false; } });
   api.onUpdate?.(text=>{$('settings-message').textContent=text;});
+  api.onUpdateAvailable?.(updateNotice);
+  $('launch-update').onclick=()=>{openSettings();$('settings-message').textContent='A new version is available. Choose Check for Updates when you are ready.';};
   $('subject-filter').onchange = renderLibrary; $('add-subject').onclick = () => editSubject();
   $('subject-form').onsubmit = event => { event.preventDefault(); run(async () => { await change({ type: 'subject', id: activeSubject, name: $('subject-name').value, kind: $('subject-kind').value, included: $('subject-included').checked }); close('subject-dialog'); }); };
   $('merge-subject').onclick = () => run(async () => {
@@ -631,7 +679,7 @@ function bind() {
     }
     offerLossRecovery();
   }, 1000);
-  setInterval(() => save(true), 10000);
+  setInterval(() => {if(seasonStamp!==new Date().toDateString()){appearance();render('',{appearanceOnly:true});}save(true);}, 10000);
   new MutationObserver(()=>audio.sync()).observe(document.body,{attributes:true,subtree:true,attributeFilter:['open']});
   setupScrollHints();
 }
@@ -651,10 +699,11 @@ async function init() {
       state.settings.theme = old.theme; state.settings.layout = old.nextLayout; state.settings.difficulty = old.nextDifficulty; restored = true;
     }
   }
-  state.settings = { ...defaults, ...state.settings };
+  state.settings = normalizeSeasonal({ ...defaults, ...state.settings });
   $('version').textContent = `MYjong ${loaded.version}`;
   bind(); show('splash-dialog'); appearance(); render(loaded.recovered ? 'Your previous puzzle could not be restored. A safety copy was kept, and a fresh puzzle is ready.' : restored ? 'Welcome back. Your puzzle is just as you left it.' : 'A fresh puzzle, just for you.'); save(true);
   if(game().tiles.some(t=>!t.removed))animateDeal();
+  if(api.checkUpdate)void api.checkUpdate().then(updateNotice).catch(()=>{});
   importReview.enqueue(library.photos.filter(p=>!p.subjectId).map(p=>p.id));
 }
 init().catch(error => { $('status').textContent = `MYjong could not load your data: ${error.message}. Your existing files have been preserved.`; });

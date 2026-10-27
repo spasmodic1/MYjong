@@ -79,7 +79,7 @@ export function validState(state) {
   if (!state || state.version !== 2 || !state.game || !state.settings || !state.stats) return false;
   const g = state.game,s=state.settings,stats=state.stats;
   if(!['Random','Terrace','Diamond','Butterfly','Random terraces'].includes(s.layout)
-    || ![1,2,3].includes(s.difficulty) || !['','blue','plum','sand','custom'].includes(s.theme)
+    || ![1,2,3].includes(s.difficulty) || !['','blue','plum','sand','custom','seasonal'].includes(s.theme)
     || s.memoryInterval!==undefined&&(!Number.isInteger(s.memoryInterval)||s.memoryInterval<0||s.memoryInterval>3600)
     || s.backgroundColor!==undefined&&!validColor(s.backgroundColor)
     || s.theme==='custom'&&!validColor(s.backgroundColor)

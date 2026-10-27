@@ -5,7 +5,7 @@ test('named layouts have distinct visible boards and a quick dealing animation',
   const dir=await fs.mkdtemp(path.join(os.tmpdir(),'myjong-layouts-')),library=await new Library(dir).init();await library.restore(path.join(root,'assets/starter-collection.zip'));
   const app=await electron.launch({...process.env.MYJONG_TEST_PACKAGE==='1'?{executablePath:path.join(root,'dist/win-unpacked/MYjong.exe'),args:[]}:{args:[root]},env:{...process.env,MYJONG_TEST_DATA:dir,MYJONG_SMOKE:'1'}});
   t.after(async()=>{await app.close();await fs.rm(dir,{recursive:true,force:true});});
-  const page=await app.firstWindow();page.setDefaultTimeout(15000);await page.waitForSelector('.tile');
+  const page=await app.firstWindow();page.setDefaultTimeout(15000);await page.waitForSelector('.tile');if(await page.locator('#splash-dialog[open]').count())await page.keyboard.press('Enter');
   await page.evaluate(()=>{window.deals=0;const animate=Element.prototype.animate;Element.prototype.animate=function(frames,options){if(options.duration===230)window.deals++;return animate.call(this,frames,options);};});
   const screenshots=path.join(root,'Screenshots/0.9.4',`review-${Date.now()}`);await fs.mkdir(screenshots,{recursive:true});const counts=[];
   for(const layout of ['Terrace','Diamond','Butterfly']){

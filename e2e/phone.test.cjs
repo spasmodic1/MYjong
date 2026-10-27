@@ -6,7 +6,7 @@ test('phone QR dismisses on receipt without interrupting the selected batch',{ti
   const dir=await fs.mkdtemp(path.join(os.tmpdir(),'myjong-phone-batch-'));
   const app=await electron.launch({...process.env.MYJONG_TEST_PACKAGE==='1'?{executablePath:path.join(root,'dist/win-unpacked/MYjong.exe'),args:[]}:{args:[root]},env:{...process.env,MYJONG_TEST_DATA:dir,MYJONG_SMOKE:'1'}});
   t.after(async()=>{await app.close();await fs.rm(dir,{recursive:true,force:true});});
-  const page=await app.firstWindow();page.setDefaultTimeout(15000);await page.waitForSelector('.tile');
+  const page=await app.firstWindow();page.setDefaultTimeout(15000);await page.waitForSelector('.tile');if(await page.locator('#splash-dialog[open]').count())await page.keyboard.press('Enter');
   await page.locator('#photos').click();await page.locator('#import-phone').click();
   await page.waitForSelector('#phone-dialog[open]');
   const url=new URL(await page.locator('#phone-url').textContent());url.hostname='127.0.0.1';url.pathname='/upload';

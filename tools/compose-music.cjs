@@ -2,6 +2,11 @@
 const fs=require('node:fs/promises'),path=require('node:path'),{spawnSync}=require('node:child_process');
 const sampleRate=32000;
 const scores={
+  snowfall:{bpm:70,lead:'bell',arp:'harp',chords:[[50,62,65,69,76],[46,58,62,65,72],[53,60,65,69,74],[48,60,64,67,74]],seed:211,sparse:true},
+  'christmas-bells':{bpm:108,lead:'bell',arp:'harp',chords:[[48,60,64,67,72],[41,53,57,60,69],[43,55,59,62,67],[48,55,60,64,72]],seed:223,jingle:true,motifs:[[[0,1,3],[1,1,3],[2,2,4],[4,1,2],[5,1,3],[6,2,4]],[[0,2,4],[2,1,3],[3,1,2],[4,2,1],[6,2,2]]]},
+  'halloween-waltz':{bpm:82,lead:'celesta',arp:'plucky',chords:[[45,57,60,64,69],[41,53,57,60,65],[44,56,59,62,68],[40,52,56,59,64]],seed:227,sparse:true,motifs:[[[0,1,2],[2,1,3],[3,1,4],[5,2,2]],[[1,1,4],[3,1,3],[4,2,2],[7,1,1]]]},
+  candlelight:{bpm:76,lead:'harp',arp:'bell',chords:[[50,62,65,69,74],[46,58,62,65,72],[43,55,58,62,67],[45,57,61,64,69]],seed:229,sparse:true},
+  'spring-bloom':{bpm:88,lead:'piano',arp:'harp',chords:[[53,65,69,72,76],[50,62,65,69,74],[46,58,62,65,72],[48,60,64,67,74]],seed:233,swing:.035},
   garden:{bpm:78,lead:'piano',arp:'harp',chords:[[48,60,64,67,71],[45,57,60,64,67],[41,53,57,60,64],[43,55,59,62,69]],seed:17},
   river:{bpm:94,lead:'harp',arp:'piano',chords:[[38,50,57,60,65],[46,58,62,65,69],[41,53,57,60,67],[43,55,60,62,67]],seed:29,swing:.055},
   moonlight:{bpm:66,lead:'piano',arp:'bell',chords:[[45,57,60,64,71],[41,53,57,60,64],[48,55,60,64,67],[43,55,59,62,69]],seed:43,sparse:true},
@@ -10,6 +15,8 @@ const scores={
   welcome:{bpm:70,lead:'piano',arp:'harp',chords:[[48,55,60,64,71],[41,53,57,60,67],[45,57,60,64,71],[43,55,59,62,69]],seed:101,sparse:true,menu:true}
 };
 const colors={
+  celesta:[[1,1,1.4],[3.01,.22,.65],[5.02,.06,.32]],
+  plucky:[[1,1,.65],[2,.4,.22],[4,.12,.1]],
   piano:[[1,1,2.3],[2.002,.28,1.2],[3.008,.12,.65],[4.016,.035,.35]],
   harp:[[1,1,1.8],[2,.32,.8],[3,.13,.45],[4,.04,.25]],
   bell:[[1,1,2.8],[2.76,.15,1.7],[5.4,.025,.55]],
@@ -29,9 +36,17 @@ function render(id,song){
       value*=Math.max(0,envelope);const index=((offset+i)%length+length)%length;left[index]+=value*gainL;right[index]+=value*gainR;
     }
   }
-  const motifs=[[[0,2,2],[3,1,3],[4,2,4],[7,1,2]],[[0,3,3],[3,1,2],[5,2,1]],[[1,2,2],[4,1,3],[5,2,4],[7,1,3]],[[0,2,2],[2,2,1],[5,3,2]]];
+  const motifs=song.motifs||[[[0,2,2],[3,1,3],[4,2,4],[7,1,2]],[[0,3,3],[3,1,2],[5,2,1]],[[1,2,2],[4,1,3],[5,2,4],[7,1,3]],[[0,2,2],[2,2,1],[5,3,2]]];
   for(let bar=0;bar<bars;bar++){
     const chord=song.chords[bar%4],start=bar*4*beat,section=Math.floor(bar/8),expression=(.82+.16*Math.sin(Math.PI*(bar%8)/8))*(song.menu?.8:1);
+    if(song.jingle)for(let eighth=0;eighth<8;eighth++){
+      const offset=Math.round((start+eighth*.5*beat)*sampleRate);
+      for(let i=0;i<sampleRate*.16;i++){
+        const time=i/sampleRate,envelope=Math.min(1,time/.003)*Math.exp(-time*34);
+        const chime=(Math.sin(time*2*Math.PI*4103)+Math.sin(time*2*Math.PI*5621)*.6+(random()-.5)*.5)*envelope*.009;
+        left[(offset+i)%length]+=chime;right[(offset+i)%length]+=chime*.85;
+      }
+    }
     chord.slice(1,4).forEach((pitch,index)=>note(pitch,start,4.8*beat,.019*expression,'pad',(index-1)*.35));
     note(chord[0],start,2.6*beat,.065*expression,'bass',-.1);
     if(!song.sparse||bar%2===0)note(chord[0]+7,start+2.5*beat,1.4*beat,.027*expression,'bass',.08);
@@ -62,8 +77,9 @@ function render(id,song){
   return {wav,stats:{seconds:duration,peak:peak*gain,rms:rms*gain,loopStep:Math.max(Math.abs(left[0]-left[length-1]),Math.abs(right[0]-right[length-1]))*gain,bpm:song.bpm}};
 }
 (async()=>{
-  await fs.mkdir('assets/music',{recursive:true});await fs.mkdir('test-results/music-renders',{recursive:true});const report={};
+  await fs.mkdir('assets/music',{recursive:true});await fs.mkdir('test-results/music-renders',{recursive:true});const report=JSON.parse(await fs.readFile('assets/music/arrangements.json','utf8').catch(()=>'{}'));
   for(const [id,song] of Object.entries(scores)){
+    if(process.argv.includes('--seasonal')&&!['snowfall','christmas-bells','halloween-waltz','candlelight','spring-bloom'].includes(id))continue;
     const {wav,stats}=render(id,song),file=path.resolve('test-results/music-renders',id+'.wav');await fs.writeFile(file,wav);
     const result=spawnSync(process.env.FFMPEG||'ffmpeg',['-hide_banner','-loglevel','error','-y','-i',file,'-c:a','libvorbis','-q:a','4',path.resolve('assets/music',id+'.ogg')],{windowsHide:true,encoding:'utf8'});
     if(result.status!==0)throw Error(result.stderr||result.error?.message||'Music encoding failed');report[id]=stats;console.log(id,JSON.stringify(stats));

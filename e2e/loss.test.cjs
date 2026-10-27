@@ -13,7 +13,7 @@ test('no legal moves opens recovery and rolls back before the first losing move'
   await fs.writeFile(path.join(dir,'library.json'),JSON.stringify({version:1,subjects:[],photos:[]}));
   const app=await electron.launch({...process.env.MYJONG_TEST_PACKAGE==='1'?{executablePath:path.join(root,'dist/win-unpacked/MYjong.exe'),args:[]}:{args:[root]},env:{...process.env,MYJONG_TEST_DATA:dir,MYJONG_SMOKE:'1'}});
   t.after(async()=>{await app.close();await fs.rm(dir,{recursive:true,force:true});});
-  const page=await app.firstWindow();page.setDefaultTimeout(15000);await page.waitForSelector('.tile');
+  const page=await app.firstWindow();page.setDefaultTimeout(15000);await page.waitForSelector('.tile');if(await page.locator('#splash-dialog[open]').count())await page.keyboard.press('Enter');
   for(const id of [4,5,2,3])await page.locator(`.tile[data-id="${id}"]`).click();
   await page.waitForSelector('#loss-dialog[open]');await page.waitForFunction(()=>!document.querySelector('#loss-rollback').disabled);
   assert.equal(await page.locator('#loss-rollback').textContent(),'Roll back before move 2');

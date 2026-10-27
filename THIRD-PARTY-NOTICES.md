@@ -1,6 +1,6 @@
 # MYjong third-party notices
 
-MYjong uses the following components. Original music is synthesized by MYjong; tile marks, materials, backgrounds, and the icon are original code/vector artwork. The 21 starter pet photos and their names were supplied and approved by their owner for public distribution. This approval does not extend to any additional photos a user later imports.
+MYjong uses the following components. Original music is synthesized by MYjong; tile faces and scenic backgrounds use original OpenAI ImageGen artwork, while tile materials and interface details combine original code and artwork. The 21 starter pet photos and their names were supplied and approved by their owner for public distribution. This approval does not extend to any additional photos a user later imports.
 
 - Electron — MIT. Chromium and bundled components retain their own notices in the Electron distribution (`LICENSE.electron.txt` and `LICENSES.chromium.html`). https://www.electronjs.org/
 - electron-updater / electron-builder — MIT. https://github.com/electron-userland/electron-builder
