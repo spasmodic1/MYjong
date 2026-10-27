@@ -1,3 +1,12 @@
+MYjong 0.9.11 keeps Settings compact.
+
+- Show the next puzzle’s theme on the toolbar and in New Game; keep the current theme until the puzzle ends. Guard against delayed music playback restarting an old track.
+- All seasonal preferences are now inside a single Seasonal settings dropdown, closed by default.
+- The expanded list scrolls within a bounded panel. Theme selections and saved preferences are unchanged.
+- The score-saving button now reads Save High score, uses the gold primary style, and gently glows until saved. Reduced-motion settings disable its pulse.
+
+Use Settings → Check for Updates, or install MYjong-Setup-0.9.11.exe.
+
 MYjong 0.9.10 simplifies seasonal matching.
 
 - Removed seasonal number markers and numbered names. Candy matches Candy, and all seasonal names follow Show names.

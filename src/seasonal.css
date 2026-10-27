@@ -39,3 +39,16 @@ body.seasonal-tiles .tile:not(.face-down){background:linear-gradient(135deg,#fff
 .seasonal-month label.check>.seasonal-illustration{width:28px;height:28px;flex:none}
 .seasonal-face{display:grid;grid-template-rows:minmax(0,1fr);gap:0;justify-items:center}
 .seasonal-symbol{height:100%;min-height:0}
+
+/* Keep the full seasonal preference list behind one compact, keyboard-accessible dropdown. */
+.seasonal-disclosure{border:1px solid #d4b77955;border-radius:12px;background:#ffffff05}
+.seasonal-disclosure>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;cursor:pointer;list-style:none;font-weight:650;color:#ffe4af;min-height:48px}
+.seasonal-disclosure>summary::-webkit-details-marker{display:none}
+.seasonal-disclosure>summary::after{content:'▾';font-size:18px;line-height:1}
+.seasonal-disclosure[open]>summary::after{transform:rotate(180deg)}
+.seasonal-disclosure>summary:focus-visible{outline:3px solid var(--gold);outline-offset:3px;border-radius:12px}
+.seasonal-options{padding:16px;max-height:min(360px,45vh);overflow-y:auto;overscroll-behavior:contain;border-top:1px solid #d4b77935}
+.seasonal-options>p:first-child{margin-top:0}
+.custom .seasonal-disclosure>summary{color:var(--board-ink)}
+
+.seasonal-next-label{display:flex;flex-direction:column;align-items:flex-start;line-height:1.25;text-align:left}.seasonal-next-label small{font-size:10px;letter-spacing:.04em;opacity:.85}.seasonal-next-label strong{font-size:12px}.seasonal-toggle[aria-pressed="false"]{filter:none;opacity:1}

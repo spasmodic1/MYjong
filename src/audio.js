@@ -23,7 +23,7 @@ export function createAudio(settings,{scene=()=> 'game',season=()=>undefined,onM
     if(!player){player=new Audio(new URL(`../assets/music/${track}.ogg`,import.meta.url).href);player.loop=true;player.preload='auto';player.volume=0;players.set(track,player);}
     if(active===track&&!player.paused&&Math.abs(player.volume-level())<.001)return;
     active=track;
-    if(player.paused)player.play().catch(error=>{if(error.name!=='AbortError'&&error.name!=='NotAllowedError')onMusicError('This tune could not be loaded. Please try another.');});
+    if(player.paused)player.play().then(()=>{if(active!==track||!settings().music||document.hidden||scene()==='paused'||settings().volume<=0){player.pause();player.volume=0;}}).catch(error=>{if(active===track&&error.name!=='AbortError'&&error.name!=='NotAllowedError')onMusicError('This tune could not be loaded. Please try another.');});
     clearInterval(fadeTimer);let ticks=0;
     const fade=()=>{
       ticks++;let settling=false;

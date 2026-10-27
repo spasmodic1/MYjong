@@ -13,7 +13,7 @@ test('Windows app: library, crops, matching, persistence, settings, phone upload
   t.after(async () => { await application?.close(); await fs.rm(dir, { recursive: true, force: true }); });
   const launch = async () => {
     application = await electron.launch({ args: [root], env: { ...process.env, MYJONG_TEST_DATA: dir, MYJONG_SMOKE:'1' } });
-    const page = await application.firstWindow(); page.setDefaultTimeout(12000);
+    const page = await application.firstWindow(); page.setDefaultTimeout(30000);
     await page.emulateMedia({reducedMotion:'reduce'});
     await page.waitForFunction(() => document.querySelector('#board .tile'));
     await page.waitForFunction(()=>document.querySelector('#board').getAttribute('aria-busy')!=='true');

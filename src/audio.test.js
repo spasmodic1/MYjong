@@ -19,3 +19,16 @@ test('arrangements crossfade between menus and game, preserve position and stop 
   place='paused';audio.sync();assert.ok(players.every(p=>p.paused));place='game';audio.sync();settle();audio.pause();assert.ok(players.every(p=>p.paused));
   settings.music=false;audio.sync();assert.equal(timers.size,0);
 });
+
+test('late seasonal playback cannot restart after a default puzzle begins',async t=>{
+ const oldAudio=globalThis.Audio,oldDocument=globalThis.document,players=[],pending=[];let season={id:'halloween'};
+ globalThis.document={hidden:false};
+ globalThis.Audio=class{constructor(src){this.src=src;this.paused=true;this.volume=0;players.push(this);}play(){return new Promise(resolve=>pending.push(()=>{this.paused=false;resolve();}));}pause(){this.paused=true;}};
+ t.after(()=>{globalThis.Audio=oldAudio;globalThis.document=oldDocument;});
+ const settings={music:true,volume:.3,seasonalMode:true,musicTrack:'garden'},audio=createAudio(()=>settings,{season:()=>season});
+ t.after(()=>audio.pause());audio.sync();settings.seasonalMode=false;audio.sync();assert.equal(players.length,1);
+ season=null;audio.sync();assert.ok(players[1].src.endsWith('/garden.ogg'));
+ for(const resolve of pending)resolve();await Promise.resolve();await Promise.resolve();
+ assert.equal(players[0].paused,true);assert.equal(players[0].volume,0);assert.equal(players[1].paused,false);
+ audio.pause();assert.ok(players.every(p=>p.paused));
+});

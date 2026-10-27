@@ -51,3 +51,12 @@ dialog{border-color:#d1b77780;box-shadow:0 0 0 3px #12372b66,0 25px 100px #0008;
 .memory-flip-ghost{pointer-events:none;z-index:1000;display:flex;align-items:center;justify-content:center}
 
 .update-notice{border:1px solid #d4b77988;color:#ffe0a0;font-size:13px;white-space:nowrap}
+#save-score{font-weight:750;border-color:#ffe8ad;min-height:50px}
+#save-score:disabled{opacity:.65;box-shadow:none}
+@media(prefers-reduced-motion:no-preference){
+ #win-dialog[open] #save-score:not(:disabled){animation:score-save-glow 2.8s ease-in-out infinite}
+}
+@keyframes score-save-glow{
+ 0%,100%{box-shadow:inset 0 1px 0 #fff8,0 3px 0 #826738,0 0 8px #f3cf8133}
+ 50%{box-shadow:inset 0 1px 0 #fff8,0 3px 0 #826738,0 0 19px #f3cf8170}
+}

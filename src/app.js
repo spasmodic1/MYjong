@@ -65,7 +65,7 @@ function appearance() {
   if(seasonalBg)document.body.classList.remove('custom');
   document.body.classList.toggle('seasonal-tiles',Boolean(activeSeason&&seasonSkin().seasonalTiles&&game().seasonal.finish!==false));
   document.body.dataset.season=activeSeason?.id||'';
-  const nextSeason=currentSeason({...s,seasonalMode:true}),preview=activeSeason||nextSeason;
+  const nextSeason=currentSeason({...s,seasonalMode:true}),preview=s.seasonalMode?nextSeason:null;
   const toggle=$('seasonal-toggle');toggle.replaceChildren();
   toggle.setAttribute('aria-pressed',String(s.seasonalMode));
   const label=`Current puzzle: ${activeSeason?.name||'default'}. Next puzzle: ${s.seasonalMode&&nextSeason?nextSeason.name:'default'}. Click to change the next puzzle’s mode.`;
@@ -74,7 +74,7 @@ function appearance() {
   toggle.style.setProperty('--preview-tile',preview?.tint||'#fff7df');
   const icon=document.createElement('span');icon.className='seasonal-toggle-icon';if(preview)icon.append(seasonalImage(preview,seasonalIconIndex(preview)));else icon.textContent='◌';icon.setAttribute('aria-hidden','true');
   const mini=document.createElement('span');mini.className='seasonal-mini';mini.setAttribute('aria-hidden','true');if(preview)mini.append(seasonalImage(preview,0));else mini.textContent='東';
-  toggle.append(icon,mini);
+  const caption=document.createElement('span');caption.className='seasonal-next-label';const heading=document.createElement('small');heading.textContent='Next puzzle';const mode=document.createElement('strong');mode.textContent=preview?`Seasonal · ${preview.name}`:'Default';caption.append(heading,mode);toggle.append(icon,mini,caption);
   if(activeSeason){for(const [key,value] of Object.entries({'--season-bg':activeSeason.bg,'--season-accent':activeSeason.accent,'--season-tile':activeSeason.tint,'--season-image':seasonalBackground(activeSeason)}))document.body.style.setProperty(key,value);}
   for(const key of ['seasonalMode','seasonalBackground','seasonalTiles','seasonalMusic'])$(key).checked=s[key];
   audio.sync();
@@ -297,7 +297,7 @@ function win() {
 function prepareScoreEntry(){
   const saved=Boolean(game().scoreSaved);
   $('score-name').value=state.settings.playerName||'';$('score-name').disabled=saved;
-  $('save-score').disabled=saved;$('save-score').textContent=saved?'Score saved':'Save to high scores';
+  $('save-score').disabled=saved;$('save-score').textContent=saved?'Score saved':'Save High score';
   $('score-saved').textContent=saved?'This game is already on your local scoreboard.':`${score(game())} points · ${time(game().elapsed)}. Enter a name to keep this result.`;
 }
 function saveNamedScore(){
@@ -326,6 +326,9 @@ function openScores(){
 }
 function openNew() {
   for (const key of ['layout','difficulty','collection','matching','mode','raceInterval','memoryInterval']) $(key).value = state.settings[key];
+  const nextSeason=currentSeason({...state.settings,seasonalMode:true});
+  $('puzzleTheme').options[1].textContent=nextSeason?`Seasonal · ${nextSeason.name}`:'Seasonal · no theme enabled this month';
+  $('puzzleTheme').value=state.settings.seasonalMode?'seasonal':'default';
   updateRaceOptions();
   $('new-warning').hidden = !game().history.length || game().recorded;
   show('new-dialog');
@@ -339,6 +342,7 @@ async function startNew(event) {
   event.preventDefault();
   const next = { ...state.settings };
   for (const key of ['layout','collection','matching','mode']) next[key] = $(key).value;
+  next.seasonalMode=$('puzzleTheme').value==='seasonal';
   next.difficulty = Number($('difficulty').value);
   next.memoryInterval=Number($('memoryInterval').value);
   next.raceInterval=Number($('raceInterval').value);
@@ -367,6 +371,7 @@ function updateNotice(info){
   button.textContent=info?.version?`Update ${info.version} available`:'Update available';
 }
 function openSettings() {
+  $('seasonal-settings').open=false;
   seasonalChoices();
   for (const key of ['theme','tileStyle','tileColor','textSize','backgroundColor','musicTrack','menuMusicTrack','volume']) $(key).value = key==='theme'&&activeSeason&&state.settings.seasonalBackground?'seasonal':state.settings[key];
   for (const key of ['available','captions','sound','music']) $(key).checked = state.settings[key];

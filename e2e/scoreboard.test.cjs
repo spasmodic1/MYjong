@@ -14,7 +14,11 @@ test('named scores persist, cannot duplicate and prefill the most recent player'
   t.after(async()=>{await app?.close();await fs.rm(dir,{recursive:true,force:true});});
   let page=await app.firstWindow();page.setDefaultTimeout(15000);await page.waitForSelector('.tile');if(await page.locator('#splash-dialog[open]').count())await page.keyboard.press('Enter');
   const win=async()=>{for(const id of [0,1,2,3])await page.locator(`.tile[data-id="${id}"]`).click();await page.waitForSelector('#win-dialog[open]');};
-  await win();await page.locator('#save-score').click();assert.match(await page.locator('#score-saved').textContent(),/Enter a name/);
+  await win();assert.equal(await page.locator('#save-score').textContent(),'Save High score');assert.ok(await page.locator('#save-score').evaluate(el=>el.classList.contains('primary')));
+  await page.emulateMedia({reducedMotion:'no-preference'});assert.equal(await page.locator('#save-score').evaluate(el=>getComputedStyle(el).animationName),'score-save-glow');
+  await page.emulateMedia({reducedMotion:'reduce'});assert.equal(await page.locator('#save-score').evaluate(el=>getComputedStyle(el).animationName),'none');
+  const shots=path.join(root,'Screenshots/high-score',String(Date.now()));await fs.mkdir(shots,{recursive:true});await page.screenshot({path:path.join(shots,'save-high-score.png')});
+  await page.locator('#save-score').click();assert.match(await page.locator('#score-saved').textContent(),/Enter a name/);
   await page.locator('#score-name').fill('  Mom  ');await page.locator('#save-score').click();
   assert.equal(await page.locator('#save-score').isDisabled(),true);
   await page.waitForFunction(async()=> (await window.myjong.load()).state.stats.highScores?.length===1);
