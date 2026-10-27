@@ -8,11 +8,13 @@ async function loadReleaseFiles(directory,version){
  if(!text.split(/\r?\n/).includes(`version: ${version}`)||!text.includes(name)||!hashes.length||hashes.some(h=>h!==sha512)||!blockmap.length)throw Error('Update metadata does not match the installer');
  return {name,sha256:hash(installer),size:installer.length,metadata:[{name:name+'.blockmap',bytes:blockmap},{name:'latest.yml',bytes:manifest}]};
 }
-async function publishMetadata(directory='dist',token=process.env.GH_TOKEN||process.env.GITHUB_TOKEN){
+async function publishMetadata(directory='dist',token=process.env.GH_TOKEN||process.env.GITHUB_TOKEN,releaseId=null){
  if(!token)throw Error('GitHub release token is required');
  const local=await loadReleaseFiles(directory,pkg.version),headers={Authorization:`Bearer ${token}`,Accept:'application/vnd.github+json','User-Agent':'MYjong-release-metadata'};
  const request=async(url,options={})=>{const response=await fetch(url,{...options,headers:{...headers,...options.headers}});if(!response.ok)throw Error(`GitHub release metadata request failed: HTTP ${response.status}`);return response;};
- const release=await (await request(`https://api.github.com/repos/${feed.owner}/${feed.repo}/releases/tags/v${pkg.version}`)).json();
+ if(releaseId!==null&&(!Number.isSafeInteger(releaseId)||releaseId<=0))throw Error('Invalid release ID');
+ const locator=releaseId===null?`tags/v${pkg.version}`:String(releaseId);
+ const release=await (await request(`https://api.github.com/repos/${feed.owner}/${feed.repo}/releases/${locator}`)).json();
  const installer=release.assets.find(a=>a.name===local.name&&a.state==='uploaded');
  if(!installer||installer.size!==local.size)throw Error('Published installer is missing or differs in size');
  const remoteDigest=installer.digest||`sha256:${hash(Buffer.from(await (await request(installer.url,{headers:{Accept:'application/octet-stream'}})).arrayBuffer()))}`;
