@@ -94,3 +94,5 @@ To publish the next version, update `package.json` and the lockfile, commit, and
 The review installer is unsigned. Code signing and testing on the recipient's actual laptop remain release-polish tasks. See [third-party notices](./THIRD-PARTY-NOTICES.md) for component licenses. A license for MYjong's own source has not yet been selected; public source visibility does not grant a general redistribution license.
 
 Music rebuild: run `node tools/prepare-music-samples.cjs`, then `node tools/compose-music.cjs` and `node tools/verify-music.cjs` with FFmpeg available. The CC0 VCSL revision and source hashes are recorded in `assets/music/sample-provenance.json`; raw recordings stay in ignored `test-results/music-samples`. Only rendered Ogg tracks ship.
+
+After winning, **Play again** immediately deals a fresh puzzle using the completed game’s setup and seasonal theme. **Another puzzle** opens New Game to choose different settings; **Close** returns to the completed board. Save the high score before starting another game if you want to keep that score.

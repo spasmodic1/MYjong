@@ -1,0 +1,24 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs/promises'),path=require('node:path'),os=require('node:os');
+const {_electron:electron}=require('@playwright/test'),root=path.resolve(__dirname,'..');
+test('Play again immediately deals the completed setup and preserves the saved high score',{timeout:60000},async t=>{
+ const dir=await fs.mkdtemp(path.join(os.tmpdir(),'myjong-play-again-'));
+ const {makeGame,defaults,emptyStats,validState}=await import('../src/game.js');
+ const original={...defaults,layout:'Random',difficulty:2,collection:'traditional',matching:'identical',mode:'challenge',seasonalMode:true};
+ const skin={theme:'snow',tiles:true,background:true,mix:'all',finish:true},game=makeGame(original,{photos:[],subjects:[]},Math.random,skin);
+ game.tiles=[0,1,2,3].map(id=>({id,x:id*2,y:0,z:0,face:10,removed:false}));game.initialSolution=[[0,1],[2,3]];
+ const settings={...original,layout:'Terrace',difficulty:3,collection:'photos',matching:'subject',mode:'memory',seasonalMode:false};
+ const state={version:2,settings,stats:emptyStats(),game};assert.equal(validState(state),true);
+ await fs.writeFile(path.join(dir,'state.json'),JSON.stringify(state));await fs.writeFile(path.join(dir,'library.json'),JSON.stringify({version:1,photos:[],subjects:[]}));
+ const app=await electron.launch({...process.env.MYJONG_TEST_PACKAGE==='1'?{executablePath:path.join(root,'dist/win-unpacked/MYjong.exe'),args:[]}:{args:[root]},env:{...process.env,MYJONG_TEST_DATA:dir,MYJONG_SMOKE:'1'}});
+ t.after(async()=>{await app.close();await fs.rm(dir,{recursive:true,force:true});});
+ const page=await app.firstWindow();page.setDefaultTimeout(15000);await page.emulateMedia({reducedMotion:'reduce'});await page.waitForSelector('#splash-dialog[open]');await page.keyboard.press('Enter');await page.waitForFunction(()=>document.querySelector('#board').getAttribute('aria-busy')==='false');
+ for(const id of [0,1,2,3])await page.locator(`.tile[data-id="${id}"]`).click();await page.waitForSelector('#win-dialog[open]');
+ for(const label of ['Close','Another puzzle','Play again'])assert.equal(await page.locator('#win-dialog').getByRole('button',{name:label,exact:true}).isVisible(),true);
+ await page.locator('#score-name').fill('Mom');await page.locator('#save-score').click();await page.waitForFunction(async()=>(await window.myjong.load()).state.stats.highScores?.length===1);
+ const before=(await page.evaluate(()=>window.myjong.load())).state;
+ const shots=path.join(root,'Screenshots/play-again',String(Date.now()));await fs.mkdir(shots,{recursive:true});await page.screenshot({path:path.join(shots,'win-actions.png')});
+ await page.getByRole('button',{name:'Play again',exact:true}).click();await page.waitForFunction(async()=>(await window.myjong.load()).state.stats.played>0);
+ assert.equal(await page.locator('#win-dialog').isVisible(),false);assert.equal(await page.locator('#new-dialog').isVisible(),false);assert.equal(await page.locator('#message-dialog').isVisible(),false);
+ const after=(await page.evaluate(()=>window.myjong.load())).state;assert.equal(validState(after),true);assert.equal(after.game.mode,'challenge');assert.equal(after.game.level,2);assert.equal(after.game.matching,'identical');assert.equal(after.game.puzzleSettings.layout,'Random');assert.equal(after.game.puzzleSettings.collection,'traditional');assert.deepEqual(after.game.seasonal,skin);
+ assert.ok(after.game.tiles.length>4);assert.ok(after.game.tiles.every(t=>!t.removed));assert.equal(after.game.recorded,false);assert.deepEqual(after.game.history,[]);assert.equal(after.stats.played,before.stats.played+1);assert.deepEqual(after.stats.highScores,before.stats.highScores);
+});

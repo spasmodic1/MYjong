@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { makeGame, defaults, reshuffle, validState, emptyStats, betterResult, score } from './game.js';
+import { makeGame, replaySettings, defaults, reshuffle, validState, emptyStats, betterResult, score } from './game.js';
 import { pairs, isFree } from './rules.js';
 const library = { subjects: [{ id:'a', name:'Cat', included:true },{ id:'b', name:'Dog', included:false }], photos: [
   { id:'1',subjectId:'a',included:true,src:'./Photos/a.jpg' },{ id:'2',subjectId:'a',included:true,src:'./Photos/b.jpg' },
@@ -66,4 +66,18 @@ test('red rabbit is part of the default traditional pool and survives save and s
  assert.ok(game.tiles.some(t=>t.face===44));assert.equal(validState(state),true);
  assert.equal(reshuffle(game,()=>.5),true);assert.ok(game.tiles.some(t=>t.face===44));assert.equal(validState(state),true);
  const bad=structuredClone(state);bad.game.tiles[0].face=45;assert.equal(validState(bad),false);
+});
+
+test('play again restores the completed setup and starts fresh, including seasonal and timed modes',()=>{
+ for(const mode of ['challenge','race','memory']){
+  const original={...defaults,layout:'Random',difficulty:2,collection:'traditional',matching:'identical',mode,raceInterval:8,memoryInterval:7,seasonalMode:true};
+  const finished=makeGame(original,library);finished.recorded=true;finished.elapsed=180;finished.hints=4;finished.shuffles=2;
+  const seasonal=structuredClone(finished.seasonal),queued={...original,layout:'Terrace',difficulty:3,collection:'photos',matching:'subject',mode:'relaxed',seasonalMode:false,raceInterval:30,memoryInterval:90};
+  const next=replaySettings(finished,queued),fresh=makeGame(next,library,Math.random,finished.seasonal);
+  assert.equal(next.layout,'Random');assert.equal(next.collection,'traditional');assert.equal(fresh.level,2);assert.equal(fresh.mode,mode);assert.equal(fresh.matching,'identical');
+  assert.deepEqual(fresh.seasonal,seasonal);assert.notEqual(fresh.seasonal,finished.seasonal);assert.equal(fresh.elapsed,0);assert.equal(fresh.recorded,false);assert.equal(fresh.hints,0);assert.equal(fresh.shuffles,0);assert.deepEqual(fresh.history,[]);assert.ok(fresh.tiles.every(t=>!t.removed));
+  if(mode==='race'){assert.equal(fresh.race.interval,8);assert.equal(fresh.race.waves,0);}
+  if(mode==='memory'){assert.equal(fresh.memory.interval,7);assert.deepEqual(fresh.memory.revealed,[]);}
+  delete finished.puzzleSettings;assert.equal(replaySettings(finished,queued).layout,finished.layout);
+ }
 });

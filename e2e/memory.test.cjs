@@ -12,7 +12,7 @@ test('Memory flips one face at a time, removes matches, saves and respects reduc
   t.after(async()=>{await app.close();await fs.rm(dir,{recursive:true,force:true});});
   const page=await app.firstWindow();page.setDefaultTimeout(15000);await page.waitForSelector('#board .tile');await page.keyboard.press('Enter');
   await page.evaluate(()=>{window.animations=[];const animate=Element.prototype.animate;Element.prototype.animate=function(frames,options){window.animations.push({id:this.dataset.id,frames,options});return animate.call(this,frames,options);};});
-  assert.equal(await page.locator('.face-down').count(),6);assert.equal(await page.locator('.tile-standard').count(),0);
+  assert.equal(await page.locator('.face-down').count(),6);assert.equal(await page.locator('#board .tile-standard').count(),0);
   await page.locator('.tile[data-id="0"]').click();assert.equal(await page.locator('.face-down').count(),5);
   await page.locator('.tile[data-id="2"]').click();assert.equal(await page.locator('.tile[data-id="0"]').evaluate(el=>el.classList.contains('face-down')),true);
   assert.equal(await page.locator('#board .tile-standard').count(),1);assert.equal(await page.locator('#board .tile').count(),6);

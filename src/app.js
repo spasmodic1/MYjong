@@ -1,6 +1,6 @@
 import {seasons,normalizeSeasonal,currentSeason,seasonalFace,seasonalArt,seasonalBackground,usesSeasonalFace,seasonalImage,seasonalIconIndex,gameSeason,gameSeasonSettings,migrateSeasonalGame} from './seasonal.js';
 import { isFree, pairs } from './rules.js';
-import { makeGame, defaults, emptyStats, photoUrl, reshuffle, score, validState, betterResult } from './game.js';
+import { makeGame, replaySettings, defaults, emptyStats, photoUrl, reshuffle, score, validState, betterResult } from './game.js';
 import { createHintCycle } from './hints.js';
 import { standardArt, standardName } from './standard-tiles.js';
 import { createAudio } from './audio.js';
@@ -348,12 +348,15 @@ async function startNew(event) {
   next.difficulty = Number($('difficulty').value);
   next.memoryInterval=Number($('memoryInterval').value);
   next.raceInterval=Number($('raceInterval').value);
-  const g = makeGame(next, library);
+  await startPuzzle(next);
+}
+async function startPuzzle(next,dialog='new-dialog',seasonal){
+  const g = makeGame(next, library,Math.random,seasonal);
   if (next.collection !== 'traditional' && !g.photos.length) {
     if (!await message('A traditional puzzle for now?', 'No named photos are included yet. You can add and name photos in your collection, or play with traditional tiles now.', true, 'Play traditional')) return;
   }
   state.settings = next; state.game = g; state.stats.played++;
-  selected = null; highlighted = [];memoryBusy=false;memoryRevealed=[]; close('new-dialog'); lastTick = performance.now(); appearance();render('A fresh puzzle, just for you.');animateDeal(); save(true);
+  selected = null; highlighted = [];memoryBusy=false;memoryRevealed=[]; close(dialog); lastTick = performance.now(); appearance();render('A fresh puzzle, just for you.');animateDeal(); save(true);
 }
 function seasonalChoices(){
   const s=normalizeSeasonal(state.settings),area=$('seasonal-choices');area.replaceChildren();
@@ -597,6 +600,7 @@ function bind() {
   $('score-name').onkeydown=event=>{if(event.key==='Enter'){event.preventDefault();saveNamedScore();}};
   $('record-current-score').onclick=()=>{close('scoreboard-dialog');prepareScoreEntry();$('win-details').textContent=`${score(game())} points · ${time(game().elapsed)}`;show('win-dialog');};
   $('photos').onclick = () => { $('subject-filter').value='all';renderLibrary();$('library-dialog').scrollTop=0;show('library-dialog');importReview.openPending(); };
+  $('win-again').onclick=()=>run(()=>startPuzzle(replaySettings(game(),state.settings),'win-dialog',game().seasonal));
   $('win-new').onclick = () => { close('win-dialog'); openNew(); };
   $('musicTrack').replaceChildren(...musicChoices.map(([id,name])=>option(name,id)));
   $('menuMusicTrack').replaceChildren(...musicChoices.map(([id,name])=>option(name,id)));

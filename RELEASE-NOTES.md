@@ -1,3 +1,12 @@
+MYjong 0.9.14 adds one-click Play again after a win.
+
+- Play again immediately deals a fresh puzzle with the completed game's layout choice, difficulty, collection, matching mode, play style, timers and seasonal theme.
+- Another puzzle still opens the setup dialog; Close returns to the completed board.
+- Replays reset the board, clock, hints, shuffles and move history while preserving saved high scores, photos and lifetime progress.
+- Existing saves remain supported; games created before this update reuse the completed layout and available saved setup.
+
+Use Settings → Check for Updates, or install MYjong-Setup-0.9.14.exe.
+
 MYjong 0.9.13 refreshes the garden and makes the theme action clear.
 
 - The toolbar now previews the destination of a click: Switch to Default or Switch to Seasonal. New Game continues to show the theme actually selected for the next puzzle.

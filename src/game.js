@@ -10,7 +10,7 @@ export const defaults = { layout: 'Random', difficulty: 1, theme: 'blue', collec
   sound: true, music: false, musicTrack:'garden', menuMusicTrack:'moonlight', volume: .45, tileStyle: 'porcelain', tileColor:'classic', backgroundColor:'#64496e', textSize:'comfortable', playerName:'', zoom: 1 };
 export const emptyStats = () => ({ played: 0, won: 0, matches: 0, best: {}, achievements: [] });
 export const photoUrl = (p, original = false) => p.src || `myjong://app/photo/${p.id}/${original ? 'original' : 'tile'}?v=${p.revision || 0}`;
-export function makeGame(settings, library, random = Math.random) {
+export function makeGame(settings, library, random = Math.random, seasonalOverride) {
   const board = deal(random, settings.layout, settings.difficulty);
   const included = library.photos.filter(p => p.included && library.subjects.some(s => s.id === p.subjectId && s.included));
   let photos;
@@ -20,7 +20,7 @@ export function makeGame(settings, library, random = Math.random) {
   } else photos = included.map(p => ({ name: library.subjects.find(s => s.id === p.subjectId).name, subjectId:p.subjectId,
     variants: [{ id: p.id, src: photoUrl(p) }] }));
   photos = shuffle(photos, random).slice(0, 10);
-  const seasonal=seasonalSnapshot(settings);
+  const seasonal=seasonalOverride?structuredClone(seasonalOverride):seasonalSnapshot(settings);
   let pool=Array.from({length:standardTileCount},(_,i)=>i);
   if(seasonal.tiles){
     const pictures=[...seasonalPictureIndices];
@@ -40,11 +40,22 @@ export function makeGame(settings, library, random = Math.random) {
     }
   });
   const game = { tiles: board.map(t => ({ ...t })), layout: board.layout, difficulty: board.difficulty,
-    level: settings.difficulty, photos, seasonal, history: [], elapsed: 0, hints: 0, shuffles: 0,
+    level: settings.difficulty, puzzleSettings:Object.fromEntries(['layout','difficulty','collection','matching','mode','raceInterval','memoryInterval'].map(key=>[key,settings[key]])), photos, seasonal, history: [], elapsed: 0, hints: 0, shuffles: 0,
     mode: settings.mode, matching: settings.matching, recorded: false, started: Date.now(),initialSolution:board.solution.map(pair=>[...pair]) };
   if(settings.mode==='race')game.race={interval:settings.raceInterval||15,firstAt:Math.max(30,settings.raceInterval||15),nextAt:Math.max(30,settings.raceInterval||15),waves:0,ended:false};
   if(settings.mode==='memory')game.memory={interval:settings.memoryInterval||0,nextAt:settings.memoryInterval||0,revealed:[]};
   return game;
+}
+// Keep replay setup separate from preferences changed while a puzzle was in progress.
+export function replaySettings(game,settings){
+ const saved=game.puzzleSettings||{},next={...settings};
+ next.layout=['Random','Terrace','Diamond','Butterfly','Random terraces'].includes(saved.layout)?saved.layout:game.layout;
+ next.difficulty=game.level;next.matching=game.matching;next.mode=game.mode;
+ next.collection=['mixed','photos','traditional'].includes(saved.collection)?saved.collection:game.photos.length?(game.tiles.some(t=>t.face>=10)?'mixed':'photos'):'traditional';
+ const raceInterval=game.race?.interval??saved.raceInterval;next.raceInterval=validRaceInterval(raceInterval)?raceInterval:settings.raceInterval;
+ const memoryInterval=game.memory?.interval??saved.memoryInterval;next.memoryInterval=Number.isInteger(memoryInterval)&&memoryInterval>=0&&memoryInterval<=3600?memoryInterval:settings.memoryInterval;
+ if(game.seasonal){next.seasonalMode=Boolean(game.seasonal.theme);next.seasonalTiles=game.seasonal.tiles;next.seasonalBackground=game.seasonal.background;next.seasonalFaceMix=game.seasonal.mix;}
+ return next;
 }
 export function shuffle(items, random = Math.random) {
   const result = [...items];
