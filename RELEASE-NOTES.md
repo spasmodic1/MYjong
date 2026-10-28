@@ -1,3 +1,10 @@
+MYjong 0.9.15 preserves preferences and lets you discard individual photo matches.
+
+- Play again keeps your saved preferences for future puzzles while replaying the completed setup.
+- Don’t use this match skips only the selected person or pet. Group photos and other accepted matches are kept.
+- Photo review remembers confirmed and discarded matches and resumes unfinished group photos after reopening.
+- Each accepted person keeps their own tile framing.
+
 MYjong 0.9.14 adds one-click Play again after a win.
 
 - Play again immediately deals a fresh puzzle with the completed game's layout choice, difficulty, collection, matching mode, play style, timers and seasonal theme.

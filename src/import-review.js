@@ -2,14 +2,20 @@ import {photoUrl} from './game.js';
 import {suggestedCrop,distance,distinctSubjects,FACE_MODEL,personMatch} from './photo-analysis.js';
 
 // Shared by file, folder, phone and resumed imports. Names always need confirmation.
-export function setupImportReview({api,getLibrary,setLibrary,refresh,openCrop}){
+export function setupImportReview({api,getLibrary,setLibrary,refresh,openCrop,loadRecognition=()=>import('../assets/recognition.js')}){
   const $=id=>document.getElementById(id),queue=[],queued=new Set(),pending=[],used=new Set();
-  let working=false,current=null;
+  let working=false,current=null,saving=false;
   const dialog=document.createElement('dialog');dialog.id='import-review-dialog';dialog.className='import-review';
   dialog.innerHTML='<div class="dialog-heading"><div><span class="eyebrow">YOUR NEW PHOTOS</span><h2 id="import-review-title">A familiar face?</h2></div><button id="import-review-later" class="close" aria-label="Review later">×</button></div><p id="import-review-explanation" class="muted"></p><div class="import-comparison"><figure><img id="import-review-new" alt="New photo, framed for a tile"><figcaption>New photo</figcaption></figure><figure id="import-review-known-wrap"><img id="import-review-known" alt="Previously confirmed photo"><figcaption id="import-review-known-label"></figcaption></figure></div><p id="import-review-framing" class="notice"></p><div id="import-name-editor" hidden><label>Choose a name<select id="import-review-name"></select></label><label>Or add a new name<input id="import-review-new-name" maxlength="80" autocomplete="off"></label></div><label class="check"><input id="import-review-use-crop" type="checkbox" checked> Use this subject’s suggested framing</label><div class="dialog-actions"><button id="import-review-skip">Later</button><button id="import-review-adjust">Adjust crop</button><button id="import-review-no">No, choose a name</button><button id="import-review-yes" class="primary">Confirm name</button></div><p id="import-review-count" class="muted"></p>';
   document.body.append(dialog);
+  const discardActions=document.createElement('div');discardActions.className='dialog-actions';
+  const remove=document.createElement('button');
+  remove.id='import-review-delete';remove.textContent='Don’t use this match';
+  remove.title='Skip this person or pet. Keep the original photo and all other matches.';
+  discardActions.append(remove);$('import-review-count').before(discardActions);
   const reviewButton=document.createElement('button');reviewButton.id='review-imports';reviewButton.hidden=true;reviewButton.textContent='Review new photos';$('add-subject').after(reviewButton);
   const write=async action=>{setLibrary(await api.changePhoto(action));};
+  function busy(value){saving=value;for(const button of dialog.querySelectorAll('button'))button.disabled=value;}
   function updateButton(){reviewButton.hidden=!pending.length;reviewButton.textContent=`Review new photos (${pending.length})`;}
   function canOpen(){return $('library-dialog').open && ![...document.querySelectorAll('dialog[open]')].some(d=>d.id!=='library-dialog'&&d!==dialog);}
   function showNext(){
@@ -26,7 +32,7 @@ export function setupImportReview({api,getLibrary,setLibrary,refresh,openCrop}){
     const select=$('import-review-name');select.replaceChildren(new Option('Choose a name…',''),...lib.subjects.map(subject=>new Option(subject.name,subject.id)));select.value=s?.subjectId||'';
     $('import-review-new-name').value='';$('import-review-yes').textContent=s?`Yes, ${s.name}`:'Save name';
     $('import-review-use-crop').checked=Boolean(current.crop);$('import-review-use-crop').closest('label').hidden=!current.crop;
-    const savedPhoto=lib.photos.find(p=>p.id===current.sourceId);if(savedPhoto?.framing==='manual'){$('import-review-new').src=photoUrl(savedPhoto);$('import-review-framing').textContent='Your manual framing has been kept.';$('import-review-use-crop').checked=false;$('import-review-use-crop').closest('label').hidden=true;}
+    const savedPhoto=lib.photos.find(p=>p.id===current.sourceId);if(savedPhoto?.framing==='manual'&&!used.has(current.sourceId)){$('import-review-new').src=photoUrl(savedPhoto);$('import-review-framing').textContent='Your manual framing has been kept.';$('import-review-use-crop').checked=false;$('import-review-use-crop').closest('label').hidden=true;}
     $('import-review-count').textContent=`${pending.length} ${pending.length===1?'subject':'subjects'} left to review. Names are never applied without your confirmation.`;
     if(!dialog.open)dialog.showModal();
   }
@@ -35,12 +41,22 @@ export function setupImportReview({api,getLibrary,setLibrary,refresh,openCrop}){
     // A name confirmed moments ago can identify the next photo in the same batch.
     const item=pending[0];
     if(item?.kind==='person'){
-      try{item.suggestion=await personSuggestion(item.detection,await import('../assets/recognition.js'));}
+      try{item.suggestion=await personSuggestion(item.detection,await loadRecognition());}
       catch{/* Keep manual naming available if a reference cannot be read. */}
     }
     showNext();
   }
   reviewButton.onclick=showNext;$('import-review-later').onclick=()=>dialog.close();$('import-review-skip').onclick=next;
+  async function discardMatch(){
+    if(!current||saving)return;
+    busy(true);
+    try{
+      await write({type:'review-match',id:current.originalId,detection:current.detection});
+      await next();
+    }catch(e){$('import-review-explanation').textContent=e.message;}
+    finally{busy(false);}
+  }
+  remove.onclick=discardMatch;
   $('import-review-no').onclick=()=>{$('import-name-editor').hidden=false;$('import-review-name').value='';$('import-review-new-name').value='';$('import-review-no').hidden=true;$('import-review-title').textContent=current.kind==='person'?'Who is this?':'Which pet is this?';$('import-review-yes').textContent='Save name';};
   $('import-review-adjust').onclick=async()=>{try{if(used.has(current.sourceId)){await write({type:'copy',id:current.sourceId});current.sourceId=getLibrary().photos.at(-1).id;}const p=getLibrary().photos.find(p=>p.id===current.sourceId);if(p)openCrop(p);}catch(e){$('import-review-explanation').textContent=e.message;}};
   $('crop-dialog').addEventListener('close',()=>{if(current){const p=getLibrary().photos.find(p=>p.id===current.sourceId);if(p?.framing==='manual'){$('import-review-new').src=photoUrl(p);$('import-review-framing').textContent='Your manual framing will be kept.';}}});
@@ -48,21 +64,23 @@ export function setupImportReview({api,getLibrary,setLibrary,refresh,openCrop}){
   $('import-review-new-name').oninput=()=>{$('import-review-yes').textContent='Save name';};
   $('import-name-editor').onkeydown=event=>{if(event.key==='Enter'){event.preventDefault();$('import-review-yes').click();}};
   $('import-review-yes').onclick=async()=>{
-    const button=$('import-review-yes');button.disabled=true;
+    if(saving)return;busy(true);
     try{
       let lib=getLibrary(),subject=lib.subjects.find(s=>s.id===$('import-review-name').value),name=$('import-review-new-name').value.trim();
       if(name){subject=lib.subjects.find(s=>s.name.toLowerCase()===name.toLowerCase());if(!subject){await write({type:'subject',name,kind:current.kind==='person'?'person':'pet',included:true});subject=getLibrary().subjects.at(-1);}}
       if(!subject){$('import-name-editor').hidden=false;$('import-review-name').focus();return;}
       let photo=getLibrary().photos.find(p=>p.id===current.sourceId);
       if(!photo){next();return;}
-      if(used.has(photo.id)){await write({type:'copy',id:photo.id});photo=getLibrary().photos.at(-1);}
+      let copied=false;
+      if(used.has(photo.id)){await write({type:'copy',id:photo.id});photo=getLibrary().photos.at(-1);copied=true;}
       await write({type:'photo',id:photo.id,subjectId:subject.id,included:true,identity:current.detection});
-      if(photo.framing!=='manual'){
+      if(copied||photo.framing!=='manual'){
         if($('import-review-use-crop').checked&&current.crop&&JSON.stringify(photo.crop)!==JSON.stringify(current.crop))await write({type:'crop',id:photo.id,crop:current.crop,automatic:true});
-        else if(!$('import-review-use-crop').checked&&current.autoFramed)await write({type:'crop',id:photo.id,crop:null});
+        else if(!$('import-review-use-crop').checked&&(current.autoFramed||copied))await write({type:'crop',id:photo.id,crop:null});
       }
+      await write({type:'review-match',id:current.originalId,detection:current.detection});
       used.add(current.sourceId);await next();
-    }catch(e){$('import-review-explanation').textContent=e.message;}finally{button.disabled=false;}
+    }catch(e){$('import-review-explanation').textContent=e.message;}finally{busy(false);}
   };
   function preview(image,crop){
     const canvas=document.createElement('canvas');canvas.width=224;canvas.height=280;const ctx=canvas.getContext('2d'),w=image.naturalWidth,h=image.naturalHeight;
@@ -87,31 +105,33 @@ export function setupImportReview({api,getLibrary,setLibrary,refresh,openCrop}){
     return personMatch(references);
   }
   async function analyze(id,engine){
-    let photo=getLibrary().photos.find(p=>p.id===id);if(!photo||photo.subjectId)return;
+    let photo=getLibrary().photos.find(p=>p.id===id);if(!photo||photo.subjectId&&!photo.reviewPending||photo.included===false)return;
+    if(photo.subjectId)used.add(id);
     const image=new Image();image.crossOrigin='anonymous';image.src=photo.originalSrc||photoUrl(photo,true);await image.decode();
     const scale=Math.min(1,1280/Math.max(image.naturalWidth,image.naturalHeight)),canvas=document.createElement('canvas');canvas.width=Math.round(image.naturalWidth*scale);canvas.height=Math.round(image.naturalHeight*scale);canvas.getContext('2d').drawImage(image,0,0,canvas.width,canvas.height);
     $('library-message').textContent='Looking for pets in your new photo…';const animals=await engine.detectPets(canvas);
     $('library-message').textContent='Looking for faces in your new photo…';const faces=await engine.detectFaces(canvas);
     const detections=distinctSubjects(animals,faces).map(d=>({...d,box:d.box.map(v=>v/scale)}));
-    await write({type:'analysis',id,detections});
-    photo=getLibrary().photos.find(p=>p.id===id);if(!photo||photo.subjectId)return;
+    await write({type:'analysis',id,detections,review:true});
+    photo=getLibrary().photos.find(p=>p.id===id);if(!photo)return;
     let autoCrop=null;
     if(detections.length===1&&detections[0].score>=.8&&!photo.framing&&!photo.crop&&photo.revision===0){
       autoCrop=suggestedCrop(detections[0].box,image.naturalWidth,image.naturalHeight,detections[0].kind);
       if(autoCrop)await write({type:'crop',id,crop:autoCrop,automatic:true});
     }
     for(const detection of detections){
+      if((photo.reviewedDetections||[]).some(d=>d.kind===detection.kind&&d.box.every((v,i)=>Math.abs(v-detection.box[i])<1)))continue;
       $('library-message').textContent='Comparing with your confirmed photos…';
       const suggestion=detection.kind==='person'?await personSuggestion(detection,engine):(await api.identifyPet?.(id,detection))?.suggestion;
       const crop=suggestedCrop(detection.box,image.naturalWidth,image.naturalHeight,detection.kind);
-      pending.push({sourceId:id,kind:detection.kind,detection,suggestion,crop,preview:preview(image,crop),autoFramed:Boolean(autoCrop),multiple:detections.length>1,uncertain:detections.length>1||detection.score<.8});
+      pending.push({sourceId:id,originalId:id,kind:detection.kind,detection,suggestion,crop,preview:preview(image,crop),autoFramed:Boolean(autoCrop),multiple:detections.length>1,uncertain:detections.length>1||detection.score<.8});
     }
   }
   async function work(){
     if(working)return;working=true;
     try{
       $('library-message').textContent='Looking for familiar faces and a comfortable tile frame…';
-      const engine=await import('../assets/recognition.js');
+      const engine=await loadRecognition();
       let checked=0,failed=0;while(queue.length){const id=queue.shift();$('library-message').textContent=`Checking your new photos… ${checked} checked, ${queue.length+1} waiting.`;try{await analyze(id,engine);}catch(e){failed++;$('library-message').textContent=`Photo recognition could not finish: ${e.message}. You can still name and frame it manually.`;}finally{checked++;queued.delete(id);refresh();updateButton();}}
       $('library-message').textContent=pending.length?`Photos checked. ${pending.length} subject suggestions are ready for review.`:'Photos checked. No clear identity match was found; choose a name and frame manually if needed.';
       if(failed)$('library-message').textContent+=` ${failed} photos could not be analyzed. Their originals are safe; you can name and frame them manually.`;

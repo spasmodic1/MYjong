@@ -39,7 +39,7 @@ test('mixed faces are deterministic by identity and all-seasonal remains availab
  s.seasonalTiles=false;assert.ok(Array.from({length:35},(_,i)=>usesSeasonalFace(s,i)).every(v=>!v));
 });
 test('new puzzles use unique picture identities and keep their theme when future preferences change',()=>{
- const settings=normalizeSeasonal({...defaults,collection:'traditional',difficulty:3,seasonalFaceMix:'all'}),library={photos:[],subjects:[]};
+ const settings=normalizeSeasonal({...defaults,layout:'Terrace',collection:'traditional',difficulty:3,seasonalFaceMix:'all'}),library={photos:[],subjects:[]};
  const game=makeGame(settings,library),faces=[...new Set(game.tiles.map(t=>t.face))];
  assert.equal(faces.length,8);assert.equal(new Set(faces.map(f=>seasonalFace(seasons[0],f-10).name)).size,8);
  const skin=structuredClone(game.seasonal);settings.seasonalMode=false;settings.seasonalFaceMix='mixed';assert.deepEqual(game.seasonal,skin);

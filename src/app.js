@@ -350,12 +350,13 @@ async function startNew(event) {
   next.raceInterval=Number($('raceInterval').value);
   await startPuzzle(next);
 }
-async function startPuzzle(next,dialog='new-dialog',seasonal){
+async function startPuzzle(next,dialog='new-dialog',seasonal,preservePreferences=false){
   const g = makeGame(next, library,Math.random,seasonal);
   if (next.collection !== 'traditional' && !g.photos.length) {
     if (!await message('A traditional puzzle for now?', 'No named photos are included yet. You can add and name photos in your collection, or play with traditional tiles now.', true, 'Play traditional')) return;
   }
-  state.settings = next; state.game = g; state.stats.played++;
+  if(!preservePreferences)state.settings = next;
+  state.game = g; state.stats.played++;
   selected = null; highlighted = [];memoryBusy=false;memoryRevealed=[]; close(dialog); lastTick = performance.now(); appearance();render('A fresh puzzle, just for you.');animateDeal(); save(true);
 }
 function seasonalChoices(){
@@ -600,7 +601,7 @@ function bind() {
   $('score-name').onkeydown=event=>{if(event.key==='Enter'){event.preventDefault();saveNamedScore();}};
   $('record-current-score').onclick=()=>{close('scoreboard-dialog');prepareScoreEntry();$('win-details').textContent=`${score(game())} points · ${time(game().elapsed)}`;show('win-dialog');};
   $('photos').onclick = () => { $('subject-filter').value='all';renderLibrary();$('library-dialog').scrollTop=0;show('library-dialog');importReview.openPending(); };
-  $('win-again').onclick=()=>run(()=>startPuzzle(replaySettings(game(),state.settings),'win-dialog',game().seasonal));
+  $('win-again').onclick=()=>run(()=>startPuzzle(replaySettings(game(),state.settings),'win-dialog',game().seasonal,true));
   $('win-new').onclick = () => { close('win-dialog'); openNew(); };
   $('musicTrack').replaceChildren(...musicChoices.map(([id,name])=>option(name,id)));
   $('menuMusicTrack').replaceChildren(...musicChoices.map(([id,name])=>option(name,id)));
@@ -716,6 +717,6 @@ async function init() {
   bind(); show('splash-dialog'); appearance(); render(loaded.recovered ? 'Your previous puzzle could not be restored. A safety copy was kept, and a fresh puzzle is ready.' : restored ? 'Welcome back. Your puzzle is just as you left it.' : 'A fresh puzzle, just for you.'); save(true);
   if(game().tiles.some(t=>!t.removed))animateDeal();
   if(api.checkUpdate)void api.checkUpdate().then(updateNotice).catch(()=>{});
-  importReview.enqueue(library.photos.filter(p=>!p.subjectId).map(p=>p.id));
+  importReview.enqueue(library.photos.filter(p=>p.reviewPending||!p.subjectId).map(p=>p.id));
 }
 init().catch(error => { $('status').textContent = `MYjong could not load your data: ${error.message}. Your existing files have been preserved.`; });

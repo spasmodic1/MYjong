@@ -58,8 +58,13 @@ export async function browserAPI() {
         library.subjects = library.subjects.filter(s => s.id !== action.from);
       } else {
         const p = library.photos.find(p => p.id === action.id);
-        if (action.type === 'analysis') p.analysis=action.detections;
-        else if (action.type === 'copy') library.photos.push({ ...p,id:crypto.randomUUID(),subjectId:null });
+        if (action.type === 'analysis') {p.analysis=action.detections;if(action.review)p.reviewPending=p.analysis.some(a=>!(p.reviewedDetections||[]).some(r=>r.kind===a.kind&&r.box.every((v,i)=>Math.abs(v-a.box[i])<1)));}
+        else if(action.type==='review-match'){
+          const d=action.detection;p.reviewedDetections ||= [];
+          if(!p.reviewedDetections.some(r=>r.kind===d.kind&&r.box.every((v,i)=>Math.abs(v-d.box[i])<1)))p.reviewedDetections.push({kind:d.kind,box:d.box});
+          p.reviewPending=(p.analysis||[]).some(a=>!p.reviewedDetections.some(r=>r.kind===a.kind&&r.box.every((v,i)=>Math.abs(v-a.box[i])<1)));
+        }
+        else if (action.type === 'copy') library.photos.push({ ...p,id:crypto.randomUUID(),subjectId:null,reviewPending:false });
         else if (action.type === 'delete') library.photos = library.photos.filter(p => p.id !== action.id);
         else if (action.type === 'photo') Object.assign(p, { subjectId: action.subjectId, included: action.included });
         else if (action.type === 'crop') {

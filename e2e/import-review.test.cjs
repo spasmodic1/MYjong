@@ -38,4 +38,20 @@ test('file import automatically asks Is this Marley using other confirmed photos
   await page.waitForFunction(()=>!document.querySelector('#import-review-dialog').open);
   library=await page.evaluate(()=>window.myjong.library());const manual=library.photos.find(p=>p.id===auto.id);assert.equal(manual.crop.zoom,2);assert.equal(manual.framing,'manual');assert.equal(manual.subjectId,subject.id);
   assert.deepEqual(remote,[],'recognition uses only bundled models');
+  {
+    const discardFile=path.join(dir,'discard-match.jpg');await require('sharp')(file).modulate({brightness:.99}).jpeg().toFile(discardFile);
+    await app.evaluate(({dialog},file)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[file]});},discardFile);
+    await page.locator('#import-files').click();
+    await page.waitForSelector('#import-review-dialog[open]',{timeout:120000});
+    const imported=(await page.evaluate(()=>window.myjong.library())).photos.at(-1);
+    await page.locator('#import-review-delete').click();
+    await page.waitForFunction(()=>!document.querySelector('#import-review-dialog').open);
+    const saved=(await page.evaluate(()=>window.myjong.library())).photos.find(p=>p.id===imported.id);
+    assert.ok(saved,'the original photo stays in the collection');
+    assert.equal(saved.subjectId,null);assert.equal(saved.reviewedDetections.length,1);assert.equal(saved.reviewPending,false);
+    await fs.access(file); // The selected source file is never deleted.
+  }
+  await page.reload();await page.waitForSelector('#splash-dialog[open]');await page.keyboard.press('Enter');
+  await page.locator('#photos').click();
+  assert.equal(await page.locator('#import-review-dialog[open]').count(),0,'dismissed matches are not offered again on restart');
 });

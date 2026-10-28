@@ -21,4 +21,9 @@ test('Play again immediately deals the completed setup and preserves the saved h
  assert.equal(await page.locator('#win-dialog').isVisible(),false);assert.equal(await page.locator('#new-dialog').isVisible(),false);assert.equal(await page.locator('#message-dialog').isVisible(),false);
  const after=(await page.evaluate(()=>window.myjong.load())).state;assert.equal(validState(after),true);assert.equal(after.game.mode,'challenge');assert.equal(after.game.level,2);assert.equal(after.game.matching,'identical');assert.equal(after.game.puzzleSettings.layout,'Random');assert.equal(after.game.puzzleSettings.collection,'traditional');assert.deepEqual(after.game.seasonal,skin);
  assert.ok(after.game.tiles.length>4);assert.ok(after.game.tiles.every(t=>!t.removed));assert.equal(after.game.recorded,false);assert.deepEqual(after.game.history,[]);assert.equal(after.stats.played,before.stats.played+1);assert.deepEqual(after.stats.highScores,before.stats.highScores);
+ assert.deepEqual(after.settings,before.settings,'Play again preserves saved preferences separately from the replay setup');
+ await page.reload();await page.waitForSelector('#splash-dialog[open]');await page.keyboard.press('Enter');
+ assert.deepEqual((await page.evaluate(()=>window.myjong.load())).state.settings,before.settings,'preferences survive reload after replay');
+ await page.locator('#new').click();
+ for(const key of ['layout','difficulty','collection','matching','mode','raceInterval','memoryInterval'])assert.equal(await page.locator(`#${key}`).inputValue(),String(before.settings[key]),`${key} is retained for the next game`);
 });

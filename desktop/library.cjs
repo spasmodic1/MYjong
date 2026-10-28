@@ -86,10 +86,17 @@ class Library {
             return { kind: String(d.kind).slice(0,20), model:String(d.model||'').slice(0,80), score:clamp(d.score,0,1), box:d.box,
               descriptor:Array.isArray(d.descriptor) && d.descriptor.length === 128 && d.descriptor.every(Number.isFinite) ? d.descriptor : null };
           });
+          if(action.review)photo.reviewPending=photo.analysis.some(a=>!(photo.reviewedDetections||[]).some(r=>r.kind===a.kind&&r.box.every((v,i)=>Math.abs(v-a.box[i])<1)));
+        } else if (action.type === 'review-match') {
+          const d=action.detection;
+          if(!d||typeof d.kind!=='string'||!Array.isArray(d.box)||d.box.length!==4||!d.box.every(Number.isFinite))throw Error('Invalid match');
+          photo.reviewedDetections ||= [];
+          if(!photo.reviewedDetections.some(r=>r.kind===d.kind&&r.box.every((v,i)=>Math.abs(v-d.box[i])<1)))photo.reviewedDetections.push({kind:d.kind,box:d.box});
+          photo.reviewPending=(photo.analysis||[]).some(a=>!photo.reviewedDetections.some(r=>r.kind===a.kind&&r.box.every((v,i)=>Math.abs(v-a.box[i])<1)));
         } else if (action.type === 'copy') {
           const id = randomUUID();
           await Promise.all(['original','tile'].map(v => fs.copyFile(this.file(photo.id,v), this.file(id,v))));
-          this.data.photos.push({ ...photo, id, subjectId: null });
+          this.data.photos.push({ ...photo, id, subjectId: null, reviewPending:false });
         } else if (action.type === 'photo') {
           if (action.subjectId && !this.data.subjects.some(s => s.id === action.subjectId)) throw Error('Unknown name');
           photo.subjectId = action.subjectId || null;
