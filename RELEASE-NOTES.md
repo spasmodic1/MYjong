@@ -1,3 +1,12 @@
+MYjong 0.9.17 adds quick people/pet controls and simpler updates.
+
+- Photo collection has a checkbox for each person or pet, plus Include people and Include pets switches. Group switches preserve individual selections and affect new puzzles only.
+- The update-available notice starts the in-app update process immediately, with the usual download and restart confirmations.
+- Check for Updates is now a prominent button at the top of Settings, with progress shown below it.
+- Photos, saved boards and high scores are preserved.
+
+Use Settings → Check for Updates, or install MYjong-Setup-0.9.17.exe.
+
 MYjong 0.9.16 fixes seasonal backgrounds on resumed puzzles.
 
 - Seasonal backgrounds follow the current local month, including while the game remains open.

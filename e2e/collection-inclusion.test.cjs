@@ -1,0 +1,27 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs/promises'),path=require('node:path'),os=require('node:os');
+const {_electron:electron}=require('@playwright/test'),{Library}=require('../desktop/library.cjs'),root=path.resolve(__dirname,'..');
+test('individual and group inclusion persists without changing photos or the current board',{timeout:60000},async t=>{
+ const dir=await fs.mkdtemp(path.join(os.tmpdir(),'myjong-inclusion-'));const lib=await new Library(dir).init();await lib.restore(path.join(root,'assets/starter-collection.zip'));
+ lib.data.subjects[0].kind='person';await lib.commit();
+ const [person,pet]=lib.data.subjects,originalPhotos=structuredClone(lib.data.photos);
+ const app=await electron.launch({...process.env.MYJONG_TEST_PACKAGE==='1'?{executablePath:path.join(root,'dist/win-unpacked/MYjong.exe'),args:[]}:{args:[root]},env:{...process.env,MYJONG_TEST_DATA:dir,MYJONG_SMOKE:'1'}});
+ t.after(async()=>{await app.close();await fs.rm(dir,{recursive:true,force:true});});
+ const page=await app.firstWindow();page.setDefaultTimeout(15000);await page.waitForSelector('#board .tile');await page.keyboard.press('Enter');
+ const board=(await page.evaluate(()=>window.myjong.load())).state.game.tiles;
+ await page.locator('#photos').click();
+ await page.getByRole('checkbox',{name:`Include ${pet.name} in new puzzles`,exact:true}).uncheck();
+ await page.waitForFunction(async id=>(await window.myjong.library()).subjects.find(s=>s.id===id).included===false,pet.id);
+ await page.locator('#includePets').uncheck();await page.locator('#includePeople').uncheck();await page.locator('#includePets').check();
+ assert.equal(await page.getByRole('checkbox',{name:`Include ${pet.name} in new puzzles`,exact:true}).isChecked(),false);
+ assert.equal(await page.getByRole('checkbox',{name:`Include ${person.name} in new puzzles`,exact:true}).isChecked(),true);
+ await page.waitForFunction(async()=>{const s=(await window.myjong.load()).state.settings;return s.includePeople===false&&s.includePets===true;});
+ assert.deepEqual((await page.evaluate(()=>window.myjong.library())).photos,originalPhotos);
+ assert.deepEqual((await page.evaluate(()=>window.myjong.load())).state.game.tiles,board);
+ await page.reload();await page.waitForSelector('#board .tile');await page.keyboard.press('Enter');await page.locator('#photos').click();
+ assert.equal(await page.locator('#includePeople').isChecked(),false);assert.equal(await page.locator('#includePets').isChecked(),true);
+ assert.equal(await page.getByRole('checkbox',{name:`Include ${pet.name} in new puzzles`,exact:true}).isChecked(),false);
+ await fs.mkdir(path.join(root,'test-results'),{recursive:true});await page.screenshot({path:path.join(root,'test-results/collection-inclusion.png')});
+ await page.locator('#library-dialog [data-close]').click();await page.locator('#settings').click();
+ assert.equal(await page.locator('.app-updates #update').isVisible(),true);
+ await page.screenshot({path:path.join(root,'test-results/update-controls.png')});
+});

@@ -1,6 +1,6 @@
 {
   "name": "myjong",
-  "version": "0.9.16",
+  "version": "0.9.17",
   "description": "A personal, offline mahjong solitaire game for Windows",
   "author": "MYjong",
   "main": "desktop/main.cjs",
@@ -15,7 +15,7 @@
     "test:desktop": "node --test e2e/desktop.test.cjs",
     "test:models": "node --test e2e/recognition.test.cjs",
     "test:imports": "node --test e2e/import-review.test.cjs",
-    "test:collection": "node --test e2e/collection.test.cjs",
+    "test:collection": "node --test e2e/collection.test.cjs e2e/collection-inclusion.test.cjs",
     "test:phone": "node --test e2e/phone.test.cjs",
     "test:personalization": "node --test e2e/personalization.test.cjs",
     "test:race": "node --test e2e/race.test.cjs",

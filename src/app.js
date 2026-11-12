@@ -413,9 +413,23 @@ function renderLibrary() {
   filter.value = [...filter.options].some(o => o.value === old&&!o.disabled) ? old : 'all';
   if(old==='unassigned'&&unnamed===0)$('library-message').textContent='All photos now have names. Showing your full collection.';
   const subjects = $('subject-list'); subjects.replaceChildren();
+  for(const [key,label] of [['includePeople','Include people'],['includePets','Include pets']]){
+    const control=$(key);control.checked=state.settings[key]!==false;
+    control.onchange=()=>{state.settings[key]=control.checked;renderLibrary();save(true);};
+  }
   for (const s of library.subjects) {
-    const button = document.createElement('button'); button.className = `subject-chip${s.included ? '' : ' excluded'}`;
-    button.textContent = `${s.name} · ${library.photos.filter(p => p.subjectId === s.id).length}`; button.onclick = () => editSubject(s); subjects.append(button);
+    const row=document.createElement('div');row.className='subject-choice';
+    const label=document.createElement('label');label.className='check';
+    const included=document.createElement('input');included.type='checkbox';included.checked=s.included;
+    included.setAttribute('aria-label',`Include ${s.name} in new puzzles`);
+    included.onchange=()=>run(()=>change({type:'subject',id:s.id,name:s.name,kind:s.kind,included:included.checked}));
+    label.append(included,document.createTextNode(s.name));
+    const button = document.createElement('button'); button.className = 'subject-chip';
+    const groupEnabled=state.settings[s.kind==='person'?'includePeople':'includePets']!==false;
+    row.classList.toggle('group-disabled',!groupEnabled);
+    const count=document.createElement('small');count.textContent=`${s.kind==='person'?'Person':'Pet'} · ${library.photos.filter(p=>p.subjectId===s.id).length} photos${groupEnabled?'':' · group off'}`;
+    button.textContent = 'Edit';button.setAttribute('aria-label',`Edit ${s.name}`); button.onclick = () => editSubject(s);
+    row.append(label,count,button);subjects.append(row);
   }
   const grid = $('photo-grid'); grid.replaceChildren();
   const visible = library.photos.filter(p => filter.value === 'all' || filter.value === 'unassigned' && !p.subjectId || p.subjectId === filter.value);
@@ -629,10 +643,17 @@ function bind() {
       appearance(); render('Your backup is restored.'); close('settings-dialog');
     });
   }
-  $('update').onclick = () => run(async () => { $('update').disabled = true; $('settings-message').textContent = 'Checking for updates…'; try { $('settings-message').textContent = await api.update(); } finally { $('update').disabled = false; } });
+  const startUpdate=()=>run(async()=>{
+    if($('update').disabled)return;
+    openSettings();$('update').disabled=$('launch-update').disabled=true;
+    $('settings-message').textContent='Checking for updates…';
+    try{$('settings-message').textContent=await api.update();}
+    finally{$('update').disabled=$('launch-update').disabled=false;}
+  });
+  $('update').onclick = startUpdate;
   api.onUpdate?.(text=>{$('settings-message').textContent=text;});
   api.onUpdateAvailable?.(updateNotice);
-  $('launch-update').onclick=()=>{openSettings();$('settings-message').textContent='A new version is available. Choose Check for Updates when you are ready.';};
+  $('launch-update').onclick=startUpdate;
   $('subject-filter').onchange = renderLibrary; $('add-subject').onclick = () => editSubject();
   $('subject-form').onsubmit = event => { event.preventDefault(); run(async () => { await change({ type: 'subject', id: activeSubject, name: $('subject-name').value, kind: $('subject-kind').value, included: $('subject-included').checked }); close('subject-dialog'); }); };
   $('merge-subject').onclick = () => run(async () => {

@@ -6,16 +6,17 @@ import {validScore} from './scoreboard.js';
 import {seasonalSnapshot,seasonalPictureIndices,validSeasonalSnapshot} from './seasonal.js';
 
 export const defaults = { layout: 'Random', difficulty: 1, theme: 'blue', collection: 'mixed',
-  matching: 'subject', mode: 'relaxed', raceInterval:5, memoryInterval:4, available: false, captions: false,
+  matching: 'subject', includePeople:true, includePets:true, mode: 'relaxed', raceInterval:5, memoryInterval:4, available: false, captions: false,
   sound: true, music: false, musicTrack:'garden', menuMusicTrack:'moonlight', volume: .45, tileStyle: 'porcelain', tileColor:'classic', backgroundColor:'#64496e', textSize:'comfortable', playerName:'', zoom: 1 };
 export const emptyStats = () => ({ played: 0, won: 0, matches: 0, best: {}, achievements: [] });
 export const photoUrl = (p, original = false) => p.src || `myjong://app/photo/${p.id}/${original ? 'original' : 'tile'}?v=${p.revision || 0}`;
 export function makeGame(settings, library, random = Math.random, seasonalOverride) {
   const board = deal(random, settings.layout, settings.difficulty);
-  const included = library.photos.filter(p => p.included && library.subjects.some(s => s.id === p.subjectId && s.included));
+  const subjects=library.subjects.filter(s=>s.included&&(s.kind==='person'?settings.includePeople!==false:settings.includePets!==false));
+  const included = library.photos.filter(p => p.included && subjects.some(s => s.id === p.subjectId));
   let photos;
   if (settings.matching === 'subject') {
-    photos = library.subjects.filter(s => s.included).map(s => ({ name: s.name, subjectId: s.id,
+    photos = subjects.map(s => ({ name: s.name, subjectId: s.id,
       variants: included.filter(p => p.subjectId === s.id).map(p => ({ id: p.id, src: photoUrl(p) })) })).filter(p => p.variants.length);
   } else photos = included.map(p => ({ name: library.subjects.find(s => s.id === p.subjectId).name, subjectId:p.subjectId,
     variants: [{ id: p.id, src: photoUrl(p) }] }));

@@ -2,6 +2,19 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { makeGame, replaySettings, defaults, reshuffle, validState, emptyStats, betterResult, score } from './game.js';
 import { pairs, isFree } from './rules.js';
+test('people and pet gates combine with individual exclusions for both matching styles',()=>{
+ const subjects=[{id:'p',name:'Person',kind:'person',included:true},{id:'a',name:'Pet',kind:'pet',included:true},{id:'b',name:'Excluded pet',kind:'pet',included:false}];
+ const photos=subjects.map(s=>({id:s.id,subjectId:s.id,included:true,src:'test.jpg'}));
+ photos.push({id:'excluded-photo',subjectId:'a',included:false,src:'test.jpg'});
+ for(const matching of ['subject','identical']){
+  const settings={...defaults,collection:'photos',matching};
+  assert.deepEqual(makeGame({...settings,includePeople:false},{subjects,photos}).photos.map(p=>p.subjectId),['a']);
+  assert.deepEqual(makeGame({...settings,includePets:false},{subjects,photos}).photos.map(p=>p.subjectId),['p']);
+  assert.equal(makeGame({...settings,includePeople:false,includePets:false},{subjects,photos}).photos.length,0);
+  assert.deepEqual(new Set(makeGame(settings,{subjects,photos}).photos.map(p=>p.subjectId)),new Set(['p','a']));
+  assert.equal(subjects[2].included,false);assert.equal(photos[3].included,false);
+ }
+});
 const library = { subjects: [{ id:'a', name:'Cat', included:true },{ id:'b', name:'Dog', included:false }], photos: [
   { id:'1',subjectId:'a',included:true,src:'./Photos/a.jpg' },{ id:'2',subjectId:'a',included:true,src:'./Photos/b.jpg' },
   { id:'3',subjectId:'b',included:true,src:'./Photos/c.jpg' }] };

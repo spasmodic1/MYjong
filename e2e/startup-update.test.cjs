@@ -20,8 +20,10 @@ test('launch update check is silent, once per process, and never downloads autom
  await page.reload();await page.waitForSelector('#board .tile');await page.keyboard.press('Enter');await page.locator('#launch-update').waitFor({state:'visible'});
  assert.equal(await app.evaluate(()=>global.updateChecks),1);
  await page.locator('#launch-update').click();assert.equal(await page.locator('#settings-dialog').isVisible(),true);
- await page.locator('#update').click();await page.waitForFunction(()=>document.querySelector('#settings-message').textContent==='Update postponed.');
+ await page.waitForFunction(()=>document.querySelector('#settings-message').textContent==='Update postponed.');
  assert.deepEqual(await app.evaluate(()=>({checks:global.updateChecks,downloads:global.updateDownloads,prompts:global.updatePrompts})),{checks:2,downloads:0,prompts:1});
  const controls=await app.evaluate(()=>{const u=global.testUpdater;return {download:u.autoDownload,install:u.autoInstallOnAppQuit};});
  assert.deepEqual(controls,{download:false,install:false});
+ await page.locator('#update').click();await page.waitForFunction(()=>document.querySelector('#settings-message').textContent==='Update postponed.'&&!document.querySelector('#update').disabled);
+ assert.equal(await app.evaluate(()=>global.updatePrompts),2);
 });
