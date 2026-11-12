@@ -1,3 +1,11 @@
+MYjong 0.9.16 fixes seasonal backgrounds on resumed puzzles.
+
+- Seasonal backgrounds follow the current local month, including while the game remains open.
+- Enabling or disabling seasonal backgrounds applies immediately, even when the current puzzle started with a default theme.
+- Tile faces, board progress, undo history, photos and saved scores are preserved. Seasonal tile choices apply to the next puzzle.
+
+Use Settings → Check for Updates, or install MYjong-Setup-0.9.16.exe.
+
 MYjong 0.9.15 preserves preferences and lets you discard individual photo matches.
 
 - Play again keeps your saved preferences for future puzzles while replaying the completed setup.

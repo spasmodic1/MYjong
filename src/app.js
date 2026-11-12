@@ -60,11 +60,13 @@ function appearance() {
   document.body.dataset.textSize=s.textSize;
   document.body.style.setProperty('--custom-background',s.backgroundColor);
   document.body.style.setProperty('--board-ink',backgroundInk(s.backgroundColor));
-  const seasonalBg=Boolean(activeSeason&&game().seasonal.background);
+  const backgroundSeason=s.seasonalBackground?currentSeason(s):null;
+  const seasonalBg=Boolean(backgroundSeason);
   document.body.classList.toggle('seasonal-background',seasonalBg);
   if(seasonalBg)document.body.classList.remove('custom');
   document.body.classList.toggle('seasonal-tiles',Boolean(activeSeason&&seasonSkin().seasonalTiles&&game().seasonal.finish!==false));
   document.body.dataset.season=activeSeason?.id||'';
+  document.body.dataset.backgroundSeason=backgroundSeason?.id||'';
   const nextSeason=currentSeason({...s,seasonalMode:true}),preview=!s.seasonalMode?nextSeason:null;
   const toggle=$('seasonal-toggle');toggle.replaceChildren();
   toggle.removeAttribute('aria-pressed');toggle.dataset.queuedMode=s.seasonalMode?'seasonal':'default';
@@ -78,6 +80,7 @@ function appearance() {
   const mini=document.createElement('span');mini.className='seasonal-mini';mini.setAttribute('aria-hidden','true');if(preview)mini.append(seasonalImage(preview,0));else mini.append(standardArt(34));
   const caption=document.createElement('span');caption.className='seasonal-next-label';const heading=document.createElement('small');heading.textContent='For the next puzzle';const mode=document.createElement('strong');mode.textContent=`Switch to ${targetMode}${preview?` · ${preview.name}`:''}`;caption.append(heading,mode);toggle.append(icon,mini,caption);
   if(activeSeason){for(const [key,value] of Object.entries({'--season-bg':activeSeason.bg,'--season-accent':activeSeason.accent,'--season-tile':activeSeason.tint,'--season-image':seasonalBackground(activeSeason)}))document.body.style.setProperty(key,value);}
+  if(backgroundSeason){for(const [key,value] of Object.entries({'--season-bg':backgroundSeason.bg,'--season-accent':backgroundSeason.accent,'--season-image':seasonalBackground(backgroundSeason)}))document.body.style.setProperty(key,value);}
   for(const key of ['seasonalMode','seasonalBackground','seasonalTiles','seasonalMusic'])$(key).checked=s[key];
   audio.sync();
   renderTilePreview();
@@ -379,7 +382,7 @@ function updateNotice(info){
 function openSettings() {
   $('seasonal-settings').open=false;
   seasonalChoices();
-  for (const key of ['theme','tileStyle','tileColor','textSize','backgroundColor','musicTrack','menuMusicTrack','volume']) $(key).value = key==='theme'&&activeSeason&&state.settings.seasonalBackground?'seasonal':state.settings[key];
+  for (const key of ['theme','tileStyle','tileColor','textSize','backgroundColor','musicTrack','menuMusicTrack','volume']) $(key).value = key==='theme'&&currentSeason(state.settings)&&state.settings.seasonalBackground?'seasonal':state.settings[key];
   for (const key of ['available','captions','sound','music']) $(key).checked = state.settings[key];
   $('settings-message').textContent = ''; show('settings-dialog');renderTilePreview();
 }
@@ -593,7 +596,7 @@ function bind() {
     if (reshuffle(game())) { game().history.push({ type: 'shuffle', tiles: before }); game().shuffles++; selected = null; highlighted = []; render('A fresh arrangement. There’s a path through these tiles.'); }
     else await message('These stacks need an earlier move', 'Undo a few matches or start another puzzle. The remaining stack shape could not be paired into a solvable arrangement.');
   });
-  $('seasonal-toggle').onclick=()=>{state.settings.seasonalMode=!state.settings.seasonalMode;appearance();render('Seasonal choices apply to your next puzzle. This puzzle keeps its theme.',{appearanceOnly:true});};
+  $('seasonal-toggle').onclick=()=>{state.settings.seasonalMode=!state.settings.seasonalMode;appearance();render('Background updated. Tile choices apply to your next puzzle.',{appearanceOnly:true});};
   $('seasonalFaceMix').onchange=()=>{state.settings.seasonalFaceMix=$('seasonalFaceMix').value;appearance();render('Seasonal choices apply to your next puzzle.',{appearanceOnly:true});};
   for(const key of ['seasonalMode','seasonalBackground','seasonalTiles','seasonalMusic'])$(key).oninput=()=>{state.settings[key]=$(key).checked;appearance();render('',{appearanceOnly:true});};
   $('settings').onclick = openSettings; $('help').onclick = () => show('help-dialog'); $('statistics').onclick = openStats;
