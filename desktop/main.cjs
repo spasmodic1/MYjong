@@ -96,8 +96,8 @@ app.whenReady().then(async () => {
     return {state,library:library.snapshot(),version:app.getVersion(),desktop:true,recovered};
   });
   handle('save', state => {
-    if (!state || state.version !== 2 || JSON.stringify(state).length > 4 * 1024 * 1024) throw Error('Invalid game save');
-    return library.exclusive(async () => { await library.atomic('state.json', state); return true; });
+    if (!state || state.version !== 2) throw Error('Invalid game save');
+    return library.saveGame(state);
   });
   handle('library', () => library.snapshot());
   handle('change', action => library.change(action));

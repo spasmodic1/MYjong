@@ -5,12 +5,35 @@ const sharp = require('sharp');
 const JSZip = require('jszip');
 const accepted = /\.(jpe?g|png|webp|heic|heif|avif)$/i;
 const validId = value => typeof value === 'string' && /^[a-f0-9-]{36}$/.test(value);
+const photoFilename = /^([a-f0-9-]{36})-(original|tile)\.jpg$/;
+async function exists(file) {
+  return fs.stat(file).then(() => true, error => {
+    if (error.code === 'ENOENT') return false;
+    throw error;
+  });
+}
+
+function gamePhotoIds(state) {
+  const ids = new Set();
+  const photos = state?.game?.photos;
+  if (!Array.isArray(photos)) return ids;
+  for (const photo of photos) {
+    if (!Array.isArray(photo?.variants)) continue;
+    for (const variant of photo.variants) {
+      if (validId(variant?.id)) ids.add(variant.id);
+      const match = typeof variant?.src === 'string' && /^myjong:\/\/(?:app\/)?photo\/([a-f0-9-]{36})\//.exec(variant.src);
+      if (match) ids.add(match[1]);
+    }
+  }
+  return ids;
+}
 const clamp = (v, min, max) => Math.max(min, Math.min(max, Number(v) || 0));
 
 class Library {
   constructor(root) { this.root = root; this.queue = Promise.resolve(); }
   async init() {
     await fs.mkdir(path.join(this.root, 'photos'), { recursive: true });
+    await this.recoverRestore();
     this.data = await this.read('library.json', { version: 1, subjects: [], photos: [] });
     return this;
   }
@@ -24,12 +47,36 @@ class Library {
     await fs.rename(temp, target);
   }
   exclusive(fn) {
-    const job = this.queue.then(fn);
+    const job = this.queue.then(() => {
+      if (this.restoreRecoveryRequired) throw Error('Restart MYjong to recover the interrupted restore.');
+      return fn();
+    });
     this.queue = job.catch(() => {});
     return job;
   }
   snapshot() { return structuredClone(this.data); }
   async commit() { await this.atomic('library.json', this.data); return this.snapshot(); }
+  retainedPhotos(state, data = this.data) {
+    return new Set([...data.photos.map(photo => photo.id), ...gamePhotoIds(state)]);
+  }
+  async photoFiles() {
+    return (await fs.readdir(path.join(this.root, 'photos'))).filter(name => photoFilename.test(name));
+  }
+  async prunePhotos(state) {
+    const retained = this.retainedPhotos(state);
+    for (const name of await this.photoFiles()) {
+      if (!retained.has(photoFilename.exec(name)[1])) {
+        await fs.rm(path.join(this.root, 'photos', name), { force: true });
+      }
+    }
+  }
+  saveGame(state) {
+    return this.exclusive(async () => {
+      await this.atomic('state.json', state);
+      await this.prunePhotos(state).catch(error => console.warn('Photo cleanup will retry on the next save:', error.message));
+      return true;
+    });
+  }
   async import(files, subjectName = '') {
     return this.exclusive(async () => {
       let added = 0, duplicates = 0; const errors = [], addedIds=[];
@@ -114,27 +161,53 @@ class Library {
           photo.revision++;
           photo.framing=action.automatic?'automatic':'manual';
         } else if (action.type === 'delete') {
-          // Keep files referenced by a saved game until a new game releases them.
           this.data.photos = this.data.photos.filter(p => p.id !== photo.id);
-          const state = await this.read('state.json', null);
-          if (!JSON.stringify(state?.game?.photos || []).includes(photo.id)) {
-            await Promise.all(['tile', 'original'].map(v => fs.rm(this.file(photo.id, v), { force: true })));
-          }
+          const result = await this.commit();
+          try { await this.prunePhotos(await this.read('state.json', null)); }
+          catch (error) { console.warn('Photo cleanup will retry on the next save:', error.message); }
+          return result;
         } else throw Error('Unknown library action');
       }
       return this.commit();
     });
   }
   async backup(target) {
-    return this.exclusive(async () => {
-      const zip = new JSZip();
-      zip.file('library.json', JSON.stringify(this.data));
-      zip.file('state.json', JSON.stringify(await this.read('state.json', null)));
-      for (const filename of await fs.readdir(path.join(this.root, 'photos'))) {
-        if (/^[a-f0-9-]{36}-(original|tile)\.jpg$/.test(filename)) zip.file(`photos/${filename}`, await fs.readFile(path.join(this.root, 'photos', filename)));
+    return this.exclusive(() => this.writeBackup(target));
+  }
+  async writeBackup(target) {
+    const zip = new JSZip();
+    const state = await this.read('state.json', null);
+    const retained = this.retainedPhotos(state);
+    zip.file('library.json', JSON.stringify(this.data));
+    zip.file('state.json', JSON.stringify(state));
+    for (const filename of await this.photoFiles()) {
+      if (retained.has(photoFilename.exec(filename)[1])) {
+        zip.file(`photos/${filename}`, await fs.readFile(path.join(this.root, 'photos', filename)));
       }
-      await fs.writeFile(target, await zip.generateAsync({ type: 'nodebuffer', compression: 'STORE' }));
-    });
+    }
+    await fs.writeFile(target, await zip.generateAsync({ type: 'nodebuffer', compression: 'STORE' }));
+  }
+  async recoverRestore() {
+    const pending = path.join(this.root, 'restore-pending');
+    if (!await exists(pending)) return;
+    const previous = JSON.parse(await fs.readFile(path.join(pending, 'previous.json'), 'utf8'));
+    for (const [relative, hadFile] of Object.entries(previous)) {
+      if (!['state.json', 'library.json'].includes(relative) &&
+          !(relative.startsWith('photos/') && photoFilename.test(relative.slice(7)))) throw Error('Invalid restore journal');
+      const target = path.join(this.root, relative);
+      if (hadFile) {
+        const temporary = `${target}.restore-tmp`;
+        await fs.writeFile(temporary, await fs.readFile(path.join(pending, relative)));
+        await fs.rename(temporary, target);
+      }
+      else await fs.rm(target, { force: true });
+    }
+    await this.finishRestoreJournal(pending);
+  }
+  async finishRestoreJournal(pending) {
+    const finished = path.join(this.root, `restore-finished-${randomUUID()}`);
+    await fs.rename(pending, finished);
+    await fs.rm(finished, { recursive: true, force: true }).catch(error => console.warn('Could not remove completed restore journal:', error.message));
   }
   async restore(source) {
     const zip = await JSZip.loadAsync(await fs.readFile(source));
@@ -142,25 +215,54 @@ class Library {
     if (entries.length > 10005 || entries.reduce((n,f) => n + (f._data?.uncompressedSize || 0),0) > 2 * 1024 ** 3) throw Error('This backup is too large.');
     if (!zip.file('library.json')) throw Error('This is not a MYjong backup.');
     const data = JSON.parse(await zip.file('library.json').async('string'));
-    if (data.version !== 1 || !Array.isArray(data.photos) || !Array.isArray(data.subjects)
-      || data.photos.some(p => !validId(p.id)) || data.subjects.some(s => !validId(s.id) || typeof s.name !== 'string')) throw Error('The backup library is invalid.');
+    if (data?.version !== 1 || !Array.isArray(data.photos) || !Array.isArray(data.subjects)
+      || data.photos.some(p => !validId(p?.id)) || data.subjects.some(s => !validId(s?.id) || typeof s.name !== 'string')) throw Error('The backup library is invalid.');
     const restoredState = zip.file('state.json') ? JSON.parse(await zip.file('state.json').async('string')) : null;
     if (restoredState && !(await import('../src/game.js')).validState(restoredState)) throw Error('The saved game in this backup is invalid.');
     const images = [];
     for (const photo of data.photos) for (const variant of ['original','tile']) {
       if (!zip.file(`photos/${photo.id}-${variant}.jpg`)) throw Error('The backup is missing a photo.');
     }
+    const retained = this.retainedPhotos(restoredState, data);
     for (const file of entries.filter(f=>/^photos\/[a-f0-9-]{36}-(original|tile)\.jpg$/.test(f.name))) {
       const match=/^photos\/([a-f0-9-]{36})-(original|tile)\.jpg$/.exec(file.name);
+      if (!retained.has(match[1])) continue;
       const bytes = await file.async('nodebuffer'); await sharp(bytes,{limitInputPixels:80000000}).metadata();
       images.push({ id:match[1], variant:match[2], bytes });
     }
-    const safety = path.join(this.root, `before-restore-${Date.now()}.zip`);
-    await this.backup(safety);
     return this.exclusive(async () => {
-      for (const image of images) await fs.writeFile(this.file(image.id,image.variant), image.bytes);
-      await this.atomic('library.json',data); await this.atomic('state.json',restoredState);
-      this.data=data; return { library:this.snapshot(), state:restoredState };
+      await this.writeBackup(path.join(this.root, `before-restore-${Date.now()}.zip`));
+      const staging = await fs.mkdtemp(path.join(this.root, 'restore-staging-'));
+      const pending = path.join(this.root, 'restore-pending');
+      try {
+        await fs.mkdir(path.join(staging, 'photos'));
+        const previous = {};
+        for (const relative of new Set(['library.json', 'state.json', ...images.map(image => `photos/${image.id}-${image.variant}.jpg`)])) {
+          const current = path.join(this.root, relative);
+          previous[relative] = await exists(current);
+          if (previous[relative]) await fs.copyFile(current, path.join(staging, relative));
+        }
+        await fs.writeFile(path.join(staging, 'previous.json'), JSON.stringify(previous));
+        // Publish the rollback journal before touching any live file.
+        await fs.rename(staging, pending);
+      } catch (error) {
+        await fs.rm(staging, { recursive: true, force: true }).catch(() => {});
+        throw error;
+      }
+      try {
+        for (const image of images) await fs.writeFile(this.file(image.id,image.variant), image.bytes);
+        await this.atomic('library.json', data);
+        await this.atomic('state.json', restoredState);
+        // Moving the journal out of the pending path commits the restore.
+        await this.finishRestoreJournal(pending);
+      } catch (error) {
+        this.restoreRecoveryRequired = true;
+        await this.recoverRestore();
+        this.restoreRecoveryRequired = false;
+        throw error;
+      }
+      this.data = data;
+      return { library: this.snapshot(), state: restoredState };
     });
   }
 }

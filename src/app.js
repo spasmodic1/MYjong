@@ -16,7 +16,7 @@ import {setupScrollHints} from './scroll-hints.js';
 
 const $ = id => document.getElementById(id);
 let api, library = { photos: [], subjects: [] }, state, selected = null, highlighted = [], paused = false;
-let activeSubject = null, activeCrop = null, saveTimer, lastTick = performance.now(), saveChain = Promise.resolve();
+let activeSubject = null, activeCrop = null, saveTimer, lastTick = performance.now(), saveChain = Promise.resolve(), restoring = false;
 let importReview;
 let arriving=[];
 let memoryBusy=false,memoryRevealed=[],dealing=false,dealGeneration=0;
@@ -41,6 +41,7 @@ async function message(title, text, confirm = false, ok = 'Continue') {
 }
 function save(immediate = false) {
   clearTimeout(saveTimer);
+  if (restoring) return;
   const commit = () => {
     const snapshot = structuredClone(state);
     saveChain = saveChain.catch(() => {}).then(() => api.save(snapshot)).then(() => {
@@ -460,7 +461,11 @@ function renderLibrary() {
       $('library-message').textContent = 'A separate copy is ready. Give it another name and frame that person or pet.';
     });
     const remove = document.createElement('button'); remove.textContent = 'Remove'; remove.onclick = () => run(async () => {
-      if (await message('Remove this copy?', 'This removes the photo from your MYjong collection. Your original photo stays untouched. A current puzzle may keep its own reference until you start a new game.', true, 'Remove copy')) await change({ type: 'delete', id: photo.id });
+      if (await message('Remove this copy?', 'This removes the photo from your MYjong collection. Your original photo stays untouched. A current puzzle may keep its own reference until you start a new game.', true, 'Remove copy')) {
+        save(true);
+        await saveChain;
+        await change({ type: 'delete', id: photo.id });
+      }
     });
     buttons.append(crop, copy, remove); card.append(img, select, label, buttons); grid.append(card);
     if(!photo.subjectId){const review=document.createElement('button');review.textContent='Suggest name & crop';review.onclick=()=>importReview.reviewPhoto(photo.id);buttons.prepend(review);}
@@ -635,11 +640,16 @@ function bind() {
     $('backup').after(restore);
     restore.onclick = () => run(async () => {
       if (!await message('Restore your collection?', 'This replaces the current MYjong library and saved game with the backup. A safety copy of your current data will be saved automatically.',true,'Choose backup')) return;
-      clearTimeout(saveTimer); await saveChain;
-      const result = await api.restore(); if (!result) return;
-      library = result.library;
-      if (validState(result.state)) state=result.state;
-      else { state.game=makeGame(state.settings,library); state.stats.played++; }
+      if (restoring) return;
+      save(true);
+      restoring = true;
+      try {
+        await saveChain;
+        const result = await api.restore(); if (!result) return;
+        library = result.library;
+        if (validState(result.state)) state=result.state;
+        else { state.game=makeGame(state.settings,library); state.stats.played++; }
+      } finally { restoring = false; }
       appearance(); render('Your backup is restored.'); close('settings-dialog');
     });
   }

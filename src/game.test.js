@@ -2,6 +2,20 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { makeGame, replaySettings, defaults, reshuffle, validState, emptyStats, betterResult, score } from './game.js';
 import { pairs, isFree } from './rules.js';
+test('long legal undo history reloads and malformed photo entries are rejected safely', () => {
+  const settings = { ...defaults, seasonalMode: false };
+  const game = makeGame(settings, { photos: [], subjects: [] });
+  const state = { version: 2, settings, game, stats: emptyStats() };
+  for (let i = 0; i < 1001; i++) {
+    const tiles = structuredClone(game.tiles);
+    assert.equal(reshuffle(game), true);
+    game.history.push({ type: 'shuffle', tiles });
+    game.shuffles++;
+  }
+  assert.equal(validState(JSON.parse(JSON.stringify(state))), true);
+  game.photos = [null];
+  assert.equal(validState(state), false);
+});
 test('people and pet gates combine with individual exclusions for both matching styles',()=>{
  const subjects=[{id:'p',name:'Person',kind:'person',included:true},{id:'a',name:'Pet',kind:'pet',included:true},{id:'b',name:'Excluded pet',kind:'pet',included:false}];
  const photos=subjects.map(s=>({id:s.id,subjectId:s.id,included:true,src:'test.jpg'}));

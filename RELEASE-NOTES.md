@@ -1,3 +1,9 @@
+MYjong 0.9.18 improves saved-game and photo recovery.
+
+- Malformed saves are preserved for recovery, and long undo histories can reopen.
+- Removed photo copies are cleaned up when the saved puzzle no longer needs them.
+- Interrupted backup restores roll back to the previous library and saved game.
+
 MYjong 0.9.17 adds quick people/pet controls and simpler updates.
 
 - Photo collection has a checkbox for each person or pet, plus Include people and Include pets switches. Group switches preserve individual selections and affect new puzzles only.

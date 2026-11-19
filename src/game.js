@@ -97,6 +97,14 @@ export const betterResult=(game,best)=>!best||(game.mode==='race'
   ? game.elapsed<best.elapsed||game.elapsed===best.elapsed&&score(game)>best.score
   : score(game)>best.score||score(game)===best.score&&game.elapsed<best.elapsed);
 export function validState(state) {
+  try { return validateState(state); }
+  catch (error) {
+    if (error instanceof TypeError) return false;
+    throw error;
+  }
+}
+
+function validateState(state) {
   if (!state || state.version !== 2 || !state.game || !state.settings || !state.stats) return false;
   const g = state.game,s=state.settings,stats=state.stats;
   if(!validSeasonalSnapshot(g.seasonal))return false;
@@ -118,7 +126,7 @@ export function validState(state) {
     || !Array.isArray(stats.achievements) || stats.achievements.some(a=>typeof a!=='string')
     || !stats.best || typeof stats.best!=='object')return false;
   if (!Array.isArray(g.tiles) || g.tiles.length < 2 || g.tiles.length > 300 || g.tiles.length % 2
-    || !Array.isArray(g.photos) || g.photos.length > 10 || !Array.isArray(g.history) || g.history.length>(g.mode==='race'?20000:1000)
+    || !Array.isArray(g.photos) || g.photos.length > 10 || !Array.isArray(g.history)
     || !Number.isFinite(g.elapsed) || g.elapsed < 0) return false;
   if(!['Relaxed','Balanced','Challenging'].includes(g.difficulty) || ![1,2,3].includes(g.level)
     || !['relaxed','challenge','race','memory'].includes(g.mode) || !['identical','subject'].includes(g.matching)
